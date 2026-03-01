@@ -29,7 +29,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .screen.active{display:block}
 
 /* ===== LOGIN SCREEN ===== */
-#screen-login{display:flex;align-items:center;justify-content:center;padding:20px}
+#screen-login{display:flex;align-items:center;justify-content:center;padding:20px;position:fixed;inset:0;z-index:100;background:var(--bg);transition:opacity .4s ease,visibility .4s ease}
+#screen-login.hidden{opacity:0;visibility:hidden;pointer-events:none}
 .login-box{background:var(--surf);border:1px solid var(--border);border-radius:24px;
   padding:36px 28px;max-width:380px;width:100%;animation:fadeUp .5s ease both}
 .login-logo{text-align:center;margin-bottom:28px}
@@ -178,8 +179,6 @@ input::placeholder{color:var(--muted)}
 </head>
 <body>
 
-<!-- CONFIG BANNER -->
-<div id="configBanner">⚠️ ยังไม่ได้ตั้งค่า Supabase — กรุณาแจ้งผู้ดูแลระบบ</div>
 
 <!-- ===== LOGIN SCREEN ===== -->
 <div class="screen active" id="screen-login">
@@ -202,13 +201,6 @@ input::placeholder{color:var(--muted)}
     <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">🔐 เข้าสู่ระบบ</button>
     <div class="login-note">ใช้เบอร์โทรและเลขบัตรประชาชน<br>ที่ลงทะเบียนกับทางหอพักไว้</div>
 
-    <!-- Supabase settings (สำหรับ setup ครั้งแรก) -->
-    <div class="supa-note" id="supaSetupNote" style="display:none">
-      ⚙️ ยังไม่ได้ตั้งค่า Supabase<br>
-      <input type="text" id="t-url" placeholder="Supabase Project URL">
-      <input type="text" id="t-key" placeholder="Supabase Anon Key" style="margin-top:6px">
-      <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:12px" onclick="saveSupaSettings()">บันทึก</button>
-    </div>
   </div>
 </div>
 
@@ -240,36 +232,12 @@ input::placeholder{color:var(--muted)}
 // ============================================================
 // CONFIG
 // ============================================================
-let SUPA_URL = localStorage.getItem('supa_url') || '';
-let SUPA_KEY = localStorage.getItem('supa_key') || '';
-let sb = null;
+const SUPA_URL = 'https://mdnupimieldwqrgxczgu.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbnVwaW1pZWxkd3FyZ3hjemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODQwNDAsImV4cCI6MjA4Nzg2MDA0MH0.r_z0eYczkO4DfElyU0eVK4CFXQx7r_EmwCepQKhMUQM';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 let currentTenant = null;
 let currentBill = null;
 let slipFile = null;
-
-function initSupa() {
-  if (!SUPA_URL || !SUPA_KEY) {
-    document.getElementById('configBanner').style.display = 'block';
-    document.getElementById('supaSetupNote').style.display = 'block';
-    return false;
-  }
-  try {
-    sb = supabase.createClient(SUPA_URL, SUPA_KEY);
-    document.getElementById('configBanner').style.display = 'none';
-    return true;
-  } catch(e) { return false; }
-}
-
-function saveSupaSettings() {
-  SUPA_URL = document.getElementById('t-url').value.trim();
-  SUPA_KEY = document.getElementById('t-key').value.trim();
-  if (!SUPA_URL || !SUPA_KEY) return;
-  localStorage.setItem('supa_url', SUPA_URL);
-  localStorage.setItem('supa_key', SUPA_KEY);
-  if (initSupa()) document.getElementById('supaSetupNote').style.display = 'none';
-}
-
-initSupa();
 
 // ============================================================
 // FORMAT
@@ -333,7 +301,7 @@ function showLoginErr(msg) {
 // BILL SCREEN
 // ============================================================
 async function showBillScreen() {
-  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-login').classList.add('hidden');
   document.getElementById('screen-bill').classList.add('active');
   document.getElementById('tb-room').textContent = 'ห้อง ' + (currentTenant.room || '—');
   document.getElementById('tb-name').textContent = currentTenant.name || '';
@@ -612,7 +580,7 @@ function copyBankNum() {
 function logout() {
   currentTenant = null; currentBill = null;
   document.getElementById('screen-bill').classList.remove('active');
-  document.getElementById('screen-login').classList.add('active');
+  document.getElementById('screen-login').classList.remove('hidden');
   document.getElementById('login-phone').value = '';
   document.getElementById('login-id').value = '';
 }
