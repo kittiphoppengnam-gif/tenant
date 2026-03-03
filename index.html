@@ -239,6 +239,19 @@ let currentTenant = null;
 let currentBill = null;
 let slipFile = null;
 
+// Auto-login if previously logged in
+(function() {
+  const saved = localStorage.getItem('saved_tenant');
+  if (saved) {
+    try {
+      currentTenant = JSON.parse(saved);
+      // Wait for DOM then show bill screen
+      window.addEventListener('DOMContentLoaded', () => showBillScreen(), { once: true });
+      if (document.readyState !== 'loading') showBillScreen();
+    } catch(e) { localStorage.removeItem('saved_tenant'); }
+  }
+})();
+
 // ============================================================
 // FORMAT
 // ============================================================
@@ -288,6 +301,7 @@ async function doLogin() {
   if (!tenant) { showLoginErr('เบอร์โทรหรือเลขบัตรไม่ถูกต้อง'); return; }
 
   currentTenant = tenant;
+  localStorage.setItem('saved_tenant', JSON.stringify(tenant));
   showBillScreen();
 }
 
@@ -582,6 +596,7 @@ function copyBankNum() {
 
 function logout() {
   currentTenant = null; currentBill = null;
+  localStorage.removeItem('saved_tenant');
   const bill = document.getElementById('screen-bill');
   bill.classList.remove('active');
   bill.style.display = 'none';
