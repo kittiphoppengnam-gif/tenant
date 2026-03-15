@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>หอพัก — ผู้เช่า</title>
+<title>JR Homeplace</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0idXJsKCNkaykiLz4KICA8ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImRrIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwZjE3MmEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMxZTNhNWYiLz4KICA8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KICA8dGV4dCB4PSIyNTYiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQwIiBmb250LXdlaWdodD0iOTAwIgogICAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiPkpSPC90ZXh0Pgo8L3N2Zz4=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0idXJsKCNkaykiLz4KICA8ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImRrIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwZjE3MmEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMxZTNhNWYiLz4KICA8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KICA8dGV4dCB4PSIyNTYiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQwIiBmb250LXdlaWdodD0iOTAwIgogICAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiPkpSPC90ZXh0Pgo8L3N2Zz4=">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="JR Homeplace">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSlIgSG9tZXBsYWNlIiwic2hvcnRfbmFtZSI6IkpSIEhvbWUiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhacFpYZENiM2c5SWpBZ01DQTFNVElnTlRFeUlqNEtJQ0E4Y21WamRDQjNhV1IwYUQwaU5URXlJaUJvWldsbmFIUTlJalV4TWlJZ2NuZzlJakV5TUNJZ1ptbHNiRDBpZFhKc0tDTmtheWtpTHo0S0lDQThaR1ZtY3o0OGJHbHVaV0Z5UjNKaFpHbGxiblFnYVdROUltUnJJaUI0TVQwaU1DVWlJSGt4UFNJd0pTSWdlREk5SWpFd01DVWlJSGt5UFNJeE1EQWxJajRLSUNBZ0lEeHpkRzl3SUc5bVpuTmxkRDBpTUNVaUlITjBlV3hsUFNKemRHOXdMV052Ykc5eU9pTXdaakUzTW1FaUx6NDhjM1J2Y0NCdlptWnpaWFE5SWpFd01DVWlJSE4wZVd4bFBTSnpkRzl3TFdOdmJHOXlPaU14WlROaE5XWWlMejRLSUNBOEwyeHBibVZoY2tkeVlXUnBaVzUwUGp3dlpHVm1jejRLSUNBOGRHVjRkQ0I0UFNJeU5UWWlJSGs5SWpNME1DSWdabTl1ZEMxbVlXMXBiSGs5SWtGeWFXRnNJRUpzWVdOckxITmhibk10YzJWeWFXWWlJR1p2Ym5RdGMybDZaVDBpTWpRd0lpQm1iMjUwTFhkbGFXZG9kRDBpT1RBd0lnb2dJQ0FnZEdWNGRDMWhibU5vYjNJOUltMXBaR1JzWlNJZ1ptbHNiRDBpZDJocGRHVWlQa3BTUEM5MFpYaDBQZ284TDNOMlp6ND0iLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XSwic3RhcnRfdXJsIjoiL3RlbmFudC5odG1sIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJ0aGVtZV9jb2xvciI6IiMwZjE3MmEiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2YwZjRmOCJ9">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -145,7 +152,12 @@ input::placeholder{color:var(--muted)}
 <div id="screen-login">
   <div class="login-box">
     <div class="login-logo">
-      <div class="icons"><span class="ico-w">💧</span><span class="ico-e">⚡</span></div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#0f172a,#1e293b);
+          display:flex;align-items:center;justify-content:center;
+          font-family:'Prompt',sans-serif;font-size:22px;font-weight:800;color:#ffffff;
+          box-shadow:0 6px 20px rgba(15,23,42,.25);border:2px solid #e2e8f0">JR</div>
+      </div>
       <h1>ระบบหอพัก</h1>
       <p>เข้าสู่ระบบเพื่อดูบิลค่าสาธารณูปโภค</p>
     </div>
