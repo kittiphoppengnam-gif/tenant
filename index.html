@@ -135,11 +135,16 @@ input::placeholder{color:var(--muted)}
 .pr{background:#fef2f2;border-color:#fecaca;color:#991b1b}
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
 @media print{
-  @page{size:A5 landscape;margin:10mm}
+  @page{size:A4 portrait;margin:12mm}
   body>*:not(#receiptModal){display:none!important}
   #receiptModal{display:block!important;position:static!important;background:#fff!important;padding:0!important}
   .receipt-box{box-shadow:none!important;border:none!important;max-width:100%!important;border-radius:0!important}
   .no-print{display:none!important}
+  /* On print, always use single-column layout for readability */
+  .rc-header{flex-direction:column!important}
+  .rc-header-right{text-align:left!important;border-top:1px dashed #ccc!important;padding-top:8px!important;width:100%!important}
+  .rc-body{flex-direction:column!important}
+  .rc-sig{width:100%!important;border-left:none!important;border-top:1px dashed #ccc!important;padding-left:0!important;padding-top:12px!important;margin-top:8px!important}
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -198,14 +203,15 @@ input::placeholder{color:var(--muted)}
 
 <!-- Receipt Modal -->
 <div id="receiptModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
-  backdrop-filter:blur(6px);z-index:300;align-items:center;justify-content:center;padding:12px">
-  <div style="background:#fff;border-radius:20px;max-width:720px;width:100%;max-height:92vh;
-    overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)" class="receipt-box">
-    <div id="receiptContent" style="padding:24px"></div>
-    <div style="padding:0 24px 20px;display:flex;gap:8px" class="no-print">
-      <button onclick="printReceipt()" style="flex:1;padding:11px;border-radius:10px;background:#0ea5e9;color:#fff;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">🖨️ พิมพ์</button>
-      <button onclick="downloadReceipt()" style="flex:1;padding:11px;border-radius:10px;background:#059669;color:#fff;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">⬇️ โหลด PDF</button>
-      <button onclick="closeReceipt()" style="padding:11px 16px;border-radius:10px;background:#f1f5f9;color:#334155;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">ปิด</button>
+  backdrop-filter:blur(6px);z-index:300;align-items:flex-start;justify-content:center;
+  padding:12px;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="background:#fff;border-radius:20px;max-width:720px;width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);margin:auto" class="receipt-box">
+    <div id="receiptContent" style="padding:20px"></div>
+    <div style="padding:0 20px 20px;display:flex;gap:8px;flex-wrap:wrap" class="no-print">
+      <button onclick="printReceipt()" style="flex:1;min-width:80px;padding:11px;border-radius:10px;background:#0ea5e9;color:#fff;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">🖨️ พิมพ์</button>
+      <button onclick="downloadReceipt()" style="flex:1;min-width:80px;padding:11px;border-radius:10px;background:#059669;color:#fff;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">⬇️ โหลด PDF</button>
+      <button onclick="closeReceipt()" style="flex:1;min-width:60px;padding:11px 16px;border-radius:10px;background:#f1f5f9;color:#334155;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">ปิด</button>
     </div>
   </div>
 </div>
@@ -713,59 +719,79 @@ function openReceipt(bill, payments) {
   ).join('');
 
   document.getElementById('receiptContent').innerHTML = `
-  <div style="font-family:'Sarabun',sans-serif;color:#111;font-size:12px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;border-bottom:2px solid #111;padding-bottom:8px">
-      <div style="flex:1;padding-right:20px">
-        <div style="font-weight:800;font-size:14px">${dormName}</div>
-        ${dormAddress?`<div style="font-size:11px">${dormAddress}</div>`:''}
-        ${dormOwner?`<div style="font-size:11px">เลขประจำตัวผู้เสียภาษี ${dormOwner}</div>`:''}
-        ${dormPhone?`<div style="font-size:11px">โทร. ${dormPhone}</div>`:''}
-        <div style="margin-top:7px"><span style="font-weight:800">ลูกค้า(Customer)</span>
-          <div>${esc(bill.tenant_name)}</div>
-          ${tenant.address?`<div style="font-size:11px">${esc(tenant.address)}</div>`:''}
-          ${tenant.phone?`<div style="font-size:11px">โทร ${esc(tenant.phone)}</div>`:''}
+  <style>
+    .rc-wrap{font-family:'Sarabun',sans-serif;color:#111;font-size:13px}
+    /* header: 2-col on wide, stack on mobile */
+    .rc-header{display:flex;justify-content:space-between;align-items:flex-start;
+      margin-bottom:10px;border-bottom:2px solid #111;padding-bottom:10px;gap:12px}
+    .rc-header-right{text-align:right;flex-shrink:0}
+    /* body: table + signature side-by-side on wide, stack on mobile */
+    .rc-body{display:flex;gap:16px;align-items:flex-start}
+    .rc-sig{width:190px;flex-shrink:0;border-left:1px dashed #ccc;padding-left:14px}
+    /* MOBILE: stack everything vertically */
+    @media(max-width:540px){
+      .rc-header{flex-direction:column}
+      .rc-header-right{text-align:left;border-top:1px dashed #ccc;padding-top:8px;width:100%}
+      .rc-header-right .rc-title{font-size:16px!important}
+      .rc-body{flex-direction:column}
+      .rc-sig{width:100%;border-left:none;border-top:1px dashed #ccc;padding-left:0;padding-top:12px;margin-top:4px}
+      .rc-wrap{font-size:13px}
+      .rc-tbl th,.rc-tbl td{padding:8px 6px!important}
+    }
+  </style>
+  <div class="rc-wrap">
+    <div class="rc-header">
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:15px">${dormName}</div>
+        ${dormAddress?`<div style="font-size:12px;margin-top:2px">${dormAddress}</div>`:''}
+        ${dormOwner?`<div style="font-size:12px">เลขประจำตัวผู้เสียภาษี ${dormOwner}</div>`:''}
+        ${dormPhone?`<div style="font-size:12px">โทร. ${dormPhone}</div>`:''}
+        <div style="margin-top:8px">
+          <span style="font-weight:800">ลูกค้า (Customer)</span>
+          <div style="margin-top:2px">${esc(bill.tenant_name)}</div>
+          ${tenant.address?`<div style="font-size:12px">${esc(tenant.address)}</div>`:''}
+          ${tenant.phone?`<div style="font-size:12px">โทร ${esc(tenant.phone)}</div>`:''}
         </div>
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-family:'Prompt',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px">ใบเสร็จรับเงิน (Receipt)</div>
-        <div style="font-size:11px">
+      <div class="rc-header-right">
+        <div class="rc-title" style="font-family:'Prompt',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">ใบเสร็จรับเงิน<br><span style="font-size:13px;font-weight:600">(Receipt)</span></div>
+        <div style="font-size:12px;line-height:1.8">
           <div style="font-weight:700">ต้นฉบับ (Original)</div>
-          <div>เลขที่(ID) ${fullReceiptNo}</div><div>วันที่(Date) ${dateStr}</div>
-          <div>ห้อง(Room) ${esc(bill.room)}</div>
-          ${dormSigner?`<div>พนักงาน(Staff) ${dormSigner}</div>`:''}
-          <div>เลขที่อ้างอิง(Ref) ${invNo}</div>
+          <div>เลขที่ ${fullReceiptNo}</div>
+          <div>วันที่ ${dateStr}</div>
+          <div>ห้อง ${esc(bill.room)}</div>
+          ${dormSigner?`<div>พนักงาน ${dormSigner}</div>`:''}
+          <div>อ้างอิง ${invNo}</div>
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:16px;align-items:flex-start">
-      <div style="flex:1">
-        <table style="width:100%;border-collapse:collapse">
+    <div class="rc-body">
+      <div style="flex:1;min-width:0">
+        <table class="rc-tbl" style="width:100%;border-collapse:collapse">
           <thead><tr style="border-top:2px solid #111;border-bottom:2px solid #111">
-            <th style="padding:5px 6px;text-align:center;font-size:11px;width:30px">ลำดับ(#)</th>
-            <th style="padding:5px 6px;text-align:left;font-size:11px">รายการชำระ (Description)</th>
-            <th style="padding:5px 6px;text-align:right;font-size:11px;white-space:nowrap">ราคา(Price)</th>
+            <th style="padding:5px 6px;text-align:center;font-size:11px;width:28px">#</th>
+            <th style="padding:5px 6px;text-align:left;font-size:11px">รายการ</th>
+            <th style="padding:5px 6px;text-align:right;font-size:11px;white-space:nowrap">ราคา (฿)</th>
           </tr></thead>
           <tbody>${rowsHTML}</tbody>
         </table>
-        <div style="border-top:2px solid #111;padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:11px;color:#555">(${numToThaiText(bill.total)})</div>
-          <div style="text-align:right">
-            <div style="font-weight:800;font-size:13px">จำนวนเงินรวมทั้งสิ้น (Total amount)</div>
-            <div style="font-weight:800;font-size:16px">${fmt(bill.total)} บาท</div>
+        <div style="border-top:2px solid #111;padding-top:8px;margin-top:4px">
+          <div style="font-size:11px;color:#555;margin-bottom:6px">(${numToThaiText(bill.total)})</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800;font-size:13px">รวมทั้งสิ้น</div>
+            <div style="font-weight:800;font-size:18px">${fmt(bill.total)} บาท</div>
           </div>
         </div>
       </div>
-      <div style="width:190px;flex-shrink:0;border-left:1px dashed #ccc;padding-left:14px">
-        <div style="font-weight:700;margin-bottom:4px">หมายเหตุ(Note)</div>
-        <div style="font-size:11px;color:#555;min-height:28px;margin-bottom:18px">${bill.fine_reason||'-'}</div>
-        <div style="margin-top:10px">
-          <div style="font-size:11px">ลงชื่อ ......................................</div>
-          <div style="font-size:11px;margin-top:8px">( ${dormSigner||'..............................'} )</div>
-          <div style="font-size:11px;color:#555;margin-top:3px">ผู้รับเงิน</div>
-        </div>
+      <div class="rc-sig">
+        <div style="font-weight:700;margin-bottom:4px">หมายเหตุ</div>
+        <div style="font-size:12px;color:#555;min-height:24px;margin-bottom:16px">${bill.fine_reason||'-'}</div>
+        <div style="font-size:12px">ลงชื่อ ......................................</div>
+        <div style="font-size:12px;margin-top:8px">( ${dormSigner||'..............................'} )</div>
+        <div style="font-size:11px;color:#555;margin-top:3px">ผู้รับเงิน</div>
       </div>
     </div>
-    <div style="border-top:1px dashed #bbb;margin-top:14px;padding-top:5px;text-align:center;font-size:10px;color:#aaa">
+    <div style="border-top:1px dashed #bbb;margin-top:14px;padding-top:6px;text-align:center;font-size:10px;color:#aaa">
       เอกสารออกโดยระบบอัตโนมัติ • ${fullReceiptNo} • ${dateStr}</div>
   </div>`;
   document.getElementById('receiptModal').style.display = 'flex';
