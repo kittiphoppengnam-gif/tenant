@@ -352,7 +352,7 @@ function clearLoginCounters() {
 }
 
 async function doLogin() {
-  // Lockout check
+  // Client-side lockout check (เร็ว, แต่ bypass ได้ — มี server-side ด้วย)
   const lockedUntil = isLockedOut();
   if (lockedUntil) {
     const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
@@ -364,23 +364,44 @@ async function doLogin() {
   const roomInput = document.getElementById('login-room').value.trim().toUpperCase();
   if (!phoneRaw || !roomInput) { showLoginErr('กรุณากรอกเบอร์โทรและเลขห้อง'); return; }
 
-  // Validate format
   const cleanPhone = phoneRaw.replace(/-/g,'');
   if (!/^\d{9,10}$/.test(cleanPhone)) { showLoginErr('รูปแบบเบอร์โทรไม่ถูกต้อง'); return; }
   if (!/^[A-Z0-9]{1,10}$/.test(roomInput)) { showLoginErr('เลขห้องไม่ถูกต้อง'); return; }
+
+  const identifier = `${cleanPhone}_${roomInput}`;
 
   const btn = document.getElementById('login-btn');
   btn.disabled = true; btn.textContent = 'กำลังตรวจสอบ...';
 
   try {
+    // 1. เช็ค server-side rate limit (สำคัญสุด — กัน brute force จริง)
+    const { data: allowed, error: rpcErr } = await sb.rpc('check_login_allowed', {
+      p_identifier: identifier
+    });
+    if (rpcErr) {
+      // ถ้า RPC ไม่มี ให้ผ่านไปก่อน (graceful fallback) แต่ log ไว้
+      console.warn('rate limit RPC unavailable:', rpcErr.message);
+    } else if (allowed === false) {
+      showLoginErr('พยายามเข้าระบบมากเกินไป กรุณารอ 15 นาที');
+      return;
+    }
+
+    // 2. Query tenant
     const { data, error } = await sb.from('tenants')
-      .select('id,name,room,phone,address,created_at')  // ตัด id_card ออกจาก client
+      .select('id,name,room,phone,address,created_at')
       .ilike('room', roomInput)
       .limit(10);
 
     if (error) throw error;
 
     const tenant = (data||[]).find(t => (t.phone||'').replace(/-/g,'') === cleanPhone);
+
+    // 3. บันทึก attempt ฝั่ง server (ทั้งสำเร็จและล้มเหลว)
+    sb.from('login_attempts').insert({
+      identifier: identifier.substring(0, 50),
+      success: !!tenant
+    }).then(() => {}, () => {}); // fire-and-forget
+
     if (!tenant) {
       recordFailedLogin();
       showLoginErr('เบอร์โทรหรือเลขห้องไม่ถูกต้อง');
@@ -389,7 +410,6 @@ async function doLogin() {
 
     clearLoginCounters();
     currentTenant = tenant;
-    // Use sessionStorage by default — clears on close. localStorage แบบ opt-in (อนาคต)
     sessionStorage.setItem('saved_tenant', JSON.stringify(tenant));
     showBillScreen();
   } catch (e) {
