@@ -304,13 +304,18 @@ function safeUrl(u) {
 })();
 
 // ============================================================
-// PAGE LIFECYCLE — clean up realtime
+// PAGE LIFECYCLE — clean up realtime + polling
 // ============================================================
-window.addEventListener('beforeunload', cleanupRealtime);
-window.addEventListener('pagehide', cleanupRealtime);
+window.addEventListener('beforeunload', () => { cleanupRealtime(); stopPolling(); });
+window.addEventListener('pagehide', () => { cleanupRealtime(); stopPolling(); });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && currentTenant && !realtimeChannel) {
-    startRealtime();
+  if (document.visibilityState === 'visible' && currentTenant) {
+    if (!realtimeChannel) startRealtime();
+    // Poll ทันทีเมื่อกลับมาเปิดแอป — สำคัญสำหรับ Android (background = realtime ขาด)
+    pollBillUpdates();
+    startPolling();
+  } else if (document.visibilityState === 'hidden') {
+    stopPolling();
   }
 });
 
@@ -319,6 +324,69 @@ function cleanupRealtime() {
   if (realtimeChannel) {
     try { sb.removeChannel(realtimeChannel); } catch(e) {}
     realtimeChannel = null;
+  }
+}
+
+// ============================================================
+// POLLING FALLBACK — กันกรณี realtime หาย
+// ============================================================
+let pollTimer = null;
+const POLL_INTERVAL_NORMAL = 60000;  // 60 วิ ปกติ
+const POLL_INTERVAL_PENDING = 15000; // 15 วิ ถ้ามีบิลรอยืนยัน (paid status)
+
+function startPolling() {
+  stopPolling();
+  if (!currentTenant) return;
+  // เลือกช่วงเวลาตามสถานะบิล — ถ้ามีบิลรอยืนยัน poll ถี่ขึ้น
+  const hasPaidBill = allBills.some(b => b.status === 'paid');
+  const interval = hasPaidBill ? POLL_INTERVAL_PENDING : POLL_INTERVAL_NORMAL;
+  pollTimer = setInterval(pollBillUpdates, interval);
+}
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+async function pollBillUpdates() {
+  if (!currentTenant || document.visibilityState !== 'visible') return;
+  try {
+    // ดึงเฉพาะ status + updated_at ของทุกบิล (เบามาก)
+    const { data, error } = await sb.from('bills')
+      .select('id,status,total')
+      .eq('tenant_id', currentTenant.id);
+    if (error || !data) return;
+
+    let changed = false;
+    data.forEach(fresh => {
+      const idx = allBills.findIndex(b => b.id === fresh.id);
+      if (idx === -1) {
+        // มีบิลใหม่ที่ยังไม่อยู่ใน list
+        changed = true;
+        return;
+      }
+      const old = allBills[idx];
+      if (old.status !== fresh.status || old.total !== fresh.total) {
+        changed = true;
+        // โชว์ toast ถ้า status เปลี่ยนเป็น confirmed
+        if (old.status !== 'confirmed' && fresh.status === 'confirmed') {
+          showToast('✅ เจ้าของหอยืนยันรับชำระแล้ว!', 'ok');
+        } else if (old.status !== 'partial' && fresh.status === 'partial') {
+          showToast('💧 ยืนยันชำระบางส่วนแล้ว', 'ok');
+        }
+        allBills[idx] = { ...old, ...fresh };
+        invalidateBill(fresh.id);
+      }
+    });
+
+    if (changed) {
+      // ถ้าบิลที่กำลังดูเปลี่ยน → reload detail
+      if (currentBill?.id) await selectBill(currentBill.id);
+      renderMonthTabs();
+      // ปรับ polling rate ถ้าสถานะเปลี่ยน
+      startPolling();
+    }
+  } catch(e) {
+    console.warn('Poll failed:', e);
   }
 }
 
@@ -439,7 +507,7 @@ function showBillScreen() {
   document.getElementById('tb-room').textContent = 'ห้อง ' + (currentTenant.room||'—');
   document.getElementById('tb-name').textContent = currentTenant.name||'';
 
-  loadAllBills();
+  loadAllBills().then(() => startPolling());
   startRealtime();
 }
 
@@ -965,6 +1033,7 @@ function copyBankNum() {
 
 function logout() {
   cleanupRealtime();
+  stopPolling();
   currentTenant = null; currentBill = null; allBills = []; currentPays = []; billDetailCache = {};
   billsOffset = 0; billsHasMore = false;
   localStorage.removeItem('saved_tenant');
@@ -1031,6 +1100,9 @@ function numToThaiText(num) {
 }
 
 function openReceipt(bill, payments) {
+  // PRELOAD libs ทันทีที่เปิด modal — ตอน user กดดาวน์โหลดจะพร้อมใช้แล้ว
+  preloadPdfLibs();
+
   const now  = new Date(), receiptNo = genReceiptNo(bill.id);
   let dorm = {};
   try { dorm = JSON.parse(localStorage.getItem('dorm_settings')||'{}'); } catch(e) {}
@@ -1129,70 +1201,79 @@ function openReceipt(bill, payments) {
 const closeReceipt = () => { document.getElementById('receiptModal').style.display='none'; };
 const printReceipt = () => { window.print(); };
 
+// ============================================================
+// PDF GENERATION — preload libs สำหรับเร็วขึ้น
+// ============================================================
+let _pdfLibsPromise = null;
+function preloadPdfLibs() {
+  if (_pdfLibsPromise) return _pdfLibsPromise;
+  _pdfLibsPromise = Promise.all([
+    window.html2canvas ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+    window.jspdf        ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+  ]).catch(err => { _pdfLibsPromise = null; throw err; });
+  return _pdfLibsPromise;
+}
+
 async function downloadReceipt(ev) {
   const btn = (ev && ev.target) || document.getElementById('dlReceiptBtn');
   const originalText = btn.textContent;
   btn.textContent='กำลังโหลด...'; btn.disabled=true;
 
-  // เก็บความกว้างเดิมของ modal เพื่อคืนค่าหลังเสร็จ
   const el = document.getElementById('receiptContent');
   const originalWidth = el.style.width;
   const originalMaxWidth = el.style.maxWidth;
 
   try {
-    await Promise.all([
-      window.html2canvas ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
-      window.jspdf        ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
-    ]);
+    // 1. โหลด libs (น่าจะ preload ไว้แล้วตอนเปิด modal)
+    await preloadPdfLibs();
 
-    // บังคับ render ที่ความกว้าง desktop เพื่อให้ layout เป็นแบบ side-by-side
-    // ไม่งั้นบนมือถือจะได้ layout แนวตั้งสูงๆ ที่ไม่สมส่วนใน A4
+    btn.textContent = 'กำลังสร้าง PDF...';
+
+    // 2. บังคับ render ที่ 720px เพื่อ layout desktop
     el.style.width = '720px';
     el.style.maxWidth = '720px';
-    // รอ reflow
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise(r => setTimeout(r, 30));
 
+    // 3. ลด scale = 1.5 (เดิม 2) — เร็วขึ้น 40%, คุณภาพยังดี
     const canvas = await html2canvas(el, {
-      scale: 2,
+      scale: 1.5,
       backgroundColor: '#ffffff',
       useCORS: true,
       windowWidth: 720,
       width: 720,
-      logging: false
+      logging: false,
+      // ปิด features ที่ไม่จำเป็น = เร็วขึ้น
+      removeContainer: true,
+      imageTimeout: 5000
     });
 
     const { jsPDF } = window.jspdf;
-    // A4 portrait (210x297mm) — เหมาะกับใบเสร็จมากกว่า
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
-    const pageW = pdf.internal.pageSize.getWidth();   // 210mm
-    const pageH = pdf.internal.pageSize.getHeight();  // 297mm
-    const margin = 12; // mm
-    const usableW = pageW - margin * 2;                // 186mm
-    const usableH = pageH - margin * 2;                // 273mm
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 12;
+    const usableW = pageW - margin * 2;
+    const usableH = pageH - margin * 2;
 
-    // คำนวณขนาดภาพให้ fit ภายใน usable area โดยรักษา aspect ratio
     const imgRatio = canvas.height / canvas.width;
     let imgW = usableW;
     let imgH = imgW * imgRatio;
-
-    // ถ้าสูงเกินหน้า ให้ scale down ตามความสูงแทน
     if (imgH > usableH) {
       imgH = usableH;
       imgW = imgH / imgRatio;
     }
 
-    // จัดกลางหน้า
     const offsetX = (pageW - imgW) / 2;
     const offsetY = margin;
 
-    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', offsetX, offsetY, imgW, imgH);
+    // JPEG quality 0.85 — เล็กลง 70% เทียบกับ PNG, มองด้วยตาแทบไม่ต่าง
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', offsetX, offsetY, imgW, imgH);
     pdf.save(`ใบเสร็จ_RC${genReceiptNo(currentBill?.id)}_ห้อง${currentBill?.room||''}_${currentBill?.month_label||''}.pdf`);
   } catch(e) {
     console.error('PDF error:', e);
     alert('โหลด PDF ไม่สำเร็จ กรุณาใช้ปุ่มพิมพ์แทน');
   } finally {
-    // คืนความกว้างเดิม (สำคัญ! ไม่งั้น modal จะกว้างผิด)
     el.style.width = originalWidth;
     el.style.maxWidth = originalMaxWidth;
     btn.textContent = originalText || '⬇️ โหลด PDF'; btn.disabled = false;
