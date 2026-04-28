@@ -70,6 +70,8 @@ input::placeholder{color:var(--muted)}
 .notif-banner{background:#eff6ff;border-bottom:2px solid #bfdbfe;padding:12px 16px;
   display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#1d4ed8;
   cursor:pointer;animation:slideDown .3s ease}
+.conn-banner{background:#fef2f2;border-bottom:2px solid #fecaca;padding:10px 16px;
+  display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#991b1b}
 .content{max-width:520px;margin:0 auto;padding:14px 14px 60px}
 .month-selector{background:var(--surf);border:1px solid var(--border);border-radius:14px;
   padding:14px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
@@ -81,6 +83,9 @@ input::placeholder{color:var(--muted)}
 .month-tab:hover{border-color:var(--water);color:var(--water)}
 .month-tab.active{background:#eff6ff;border-color:var(--water);color:var(--water)}
 .month-tab.has-pending{border-color:var(--elec);color:var(--elec);background:#fffbeb}
+.load-more{margin-top:8px;width:100%;padding:8px;background:var(--surf2);border:1px dashed var(--border2);
+  border-radius:10px;color:var(--muted);font-size:12px;font-family:'Prompt',sans-serif;cursor:pointer}
+.load-more:hover{background:var(--surf3);color:var(--text)}
 .card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
   padding:18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);animation:fadeUp .35s ease both}
 .card-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
@@ -140,7 +145,6 @@ input::placeholder{color:var(--muted)}
   #receiptModal{display:block!important;position:static!important;background:#fff!important;padding:0!important}
   .receipt-box{box-shadow:none!important;border:none!important;max-width:100%!important;border-radius:0!important}
   .no-print{display:none!important}
-  /* On print, always use single-column layout for readability */
   .rc-header{flex-direction:column!important}
   .rc-header-right{text-align:left!important;border-top:1px dashed #ccc!important;padding-top:8px!important;width:100%!important}
   .rc-body{flex-direction:column!important}
@@ -167,12 +171,12 @@ input::placeholder{color:var(--muted)}
     <div class="fg">
       <label>เบอร์โทรศัพท์</label>
       <input type="tel" id="login-phone" placeholder="0xx-xxx-xxxx" maxlength="12"
-        oninput="fmtPhone(this)" onkeydown="if(event.key==='Enter')doLogin()">
+        autocomplete="tel" oninput="fmtPhone(this)" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div class="fg">
       <label>เลขห้อง</label>
       <input type="text" id="login-room" placeholder="เช่น A3, B12, 101" maxlength="10"
-        style="text-transform:uppercase" onkeydown="if(event.key==='Enter')doLogin()">
+        style="text-transform:uppercase" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div class="login-err" id="login-err"></div>
     <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">🔐 เข้าสู่ระบบ</button>
@@ -188,6 +192,9 @@ input::placeholder{color:var(--muted)}
     </div>
     <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
   </div>
+  <div id="connBanner" style="display:none" class="conn-banner">
+    ⚠️ <span id="connMsg">การเชื่อมต่อขาด — กำลังลองใหม่...</span>
+  </div>
   <div id="newBillBanner" style="display:none" class="notif-banner" onclick="this.style.display='none'">
     🔔 <span id="newBillMsg">มีบิลใหม่จากเจ้าของหอ!</span>
     <span style="margin-left:auto;font-size:11px;opacity:.7">แตะเพื่อปิด</span>
@@ -196,6 +203,7 @@ input::placeholder{color:var(--muted)}
     <div class="month-selector">
       <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;letter-spacing:.05em">เลือกเดือน</div>
       <div class="month-tabs" id="monthTabs"><div style="color:var(--muted);font-size:13px;padding:4px">กำลังโหลด...</div></div>
+      <button class="load-more" id="loadMoreBtn" style="display:none" onclick="loadMoreBills()">โหลดบิลเก่ากว่านี้</button>
     </div>
     <div id="bill-content"></div>
   </div>
@@ -210,7 +218,7 @@ input::placeholder{color:var(--muted)}
     <div id="receiptContent" style="padding:20px"></div>
     <div style="padding:0 20px 20px;display:flex;gap:8px;flex-wrap:wrap" class="no-print">
       <button onclick="printReceipt()" style="flex:1;min-width:80px;padding:11px;border-radius:10px;background:#0ea5e9;color:#fff;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">🖨️ พิมพ์</button>
-      <button onclick="downloadReceipt()" style="flex:1;min-width:80px;padding:11px;border-radius:10px;background:#059669;color:#fff;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">⬇️ โหลด PDF</button>
+      <button id="dlReceiptBtn" onclick="downloadReceipt(event)" style="flex:1;min-width:80px;padding:11px;border-radius:10px;background:#059669;color:#fff;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">⬇️ โหลด PDF</button>
       <button onclick="closeReceipt()" style="flex:1;min-width:60px;padding:11px 16px;border-radius:10px;background:#f1f5f9;color:#334155;font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;border:none;cursor:pointer">ปิด</button>
     </div>
   </div>
@@ -230,35 +238,86 @@ const SUPA_URL = 'https://mdnupimieldwqrgxczgu.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbnVwaW1pZWxkd3FyZ3hjemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODQwNDAsImV4cCI6MjA4Nzg2MDA0MH0.r_z0eYczkO4DfElyU0eVK4CFXQx7r_EmwCepQKhMUQM';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+// Pagination
+const BILLS_PAGE_SIZE = 12;
+
+// State
 let currentTenant = null;
 let currentBill   = null;
 let currentPays   = [];
-let allBills      = [];       // lightweight list (no payment_qr)
-let billDetailCache = {};     // billId → { bill (full), pays }
+let allBills      = [];
+let billDetailCache = {};
 let realtimeChannel = null;
+let realtimeRetryTimer = null;
+let realtimeRetryCount = 0;
 let slipFile = null;
+let billsOffset = 0;
+let billsHasMore = false;
+
+// Login rate-limit (client-side; complement to server)
+const LOGIN_LOCK_KEY = 'login_lockout';
+const LOGIN_TRIES_KEY = 'login_tries';
+const MAX_LOGIN_TRIES = 5;
+const LOCKOUT_MS = 5 * 60 * 1000; // 5 นาที
 
 // ============================================================
-// FAST FORMATTER — one Intl instance
+// FORMATTER
 // ============================================================
 const _nf = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2 });
 const fmt = n => _nf.format(parseFloat(n) || 0);
-const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+// Sanitize URL — block javascript:, data: (except images), etc.
+function safeUrl(u) {
+  if (!u) return '';
+  const s = String(u).trim();
+  if (/^(https?:|\/)/i.test(s)) return s;
+  // อนุญาตเฉพาะ data:image
+  if (/^data:image\//i.test(s)) return s;
+  return '';
+}
 
 // ============================================================
-// AUTO-RESTORE SESSION — runs immediately (no DOMContentLoaded wait)
+// SESSION RESTORE
 // ============================================================
 (function restoreSession() {
-  const saved = localStorage.getItem('saved_tenant');
+  const saved = sessionStorage.getItem('saved_tenant') || localStorage.getItem('saved_tenant');
   if (!saved) return;
   try {
-    currentTenant = JSON.parse(saved);
-    // Show bill screen immediately (paint fast), then load data
+    const parsed = JSON.parse(saved);
+    // Validate basic shape
+    if (!parsed || !parsed.id || !parsed.room) {
+      localStorage.removeItem('saved_tenant');
+      sessionStorage.removeItem('saved_tenant');
+      return;
+    }
+    currentTenant = parsed;
     showBillScreen();
   } catch(e) {
     localStorage.removeItem('saved_tenant');
+    sessionStorage.removeItem('saved_tenant');
   }
 })();
+
+// ============================================================
+// PAGE LIFECYCLE — clean up realtime
+// ============================================================
+window.addEventListener('beforeunload', cleanupRealtime);
+window.addEventListener('pagehide', cleanupRealtime);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentTenant && !realtimeChannel) {
+    startRealtime();
+  }
+});
+
+function cleanupRealtime() {
+  if (realtimeRetryTimer) { clearTimeout(realtimeRetryTimer); realtimeRetryTimer = null; }
+  if (realtimeChannel) {
+    try { sb.removeChannel(realtimeChannel); } catch(e) {}
+    realtimeChannel = null;
+  }
+}
 
 // ============================================================
 // PHONE FORMAT
@@ -271,35 +330,73 @@ function fmtPhone(input) {
 }
 
 // ============================================================
-// LOGIN — query with filter on server side (not client-side filter)
+// LOGIN — rate limited + validated
 // ============================================================
+function isLockedOut() {
+  const until = parseInt(localStorage.getItem(LOGIN_LOCK_KEY) || '0', 10);
+  return until && Date.now() < until ? until : 0;
+}
+
+function recordFailedLogin() {
+  const tries = parseInt(localStorage.getItem(LOGIN_TRIES_KEY) || '0', 10) + 1;
+  localStorage.setItem(LOGIN_TRIES_KEY, String(tries));
+  if (tries >= MAX_LOGIN_TRIES) {
+    localStorage.setItem(LOGIN_LOCK_KEY, String(Date.now() + LOCKOUT_MS));
+    localStorage.removeItem(LOGIN_TRIES_KEY);
+  }
+}
+
+function clearLoginCounters() {
+  localStorage.removeItem(LOGIN_TRIES_KEY);
+  localStorage.removeItem(LOGIN_LOCK_KEY);
+}
+
 async function doLogin() {
-  const phone     = document.getElementById('login-phone').value.trim();
+  // Lockout check
+  const lockedUntil = isLockedOut();
+  if (lockedUntil) {
+    const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
+    showLoginErr(`พยายามเข้าระบบมากเกินไป กรุณารอ ${mins} นาที`);
+    return;
+  }
+
+  const phoneRaw  = document.getElementById('login-phone').value.trim();
   const roomInput = document.getElementById('login-room').value.trim().toUpperCase();
-  if (!phone || !roomInput) { showLoginErr('กรุณากรอกเบอร์โทรและเลขห้อง'); return; }
+  if (!phoneRaw || !roomInput) { showLoginErr('กรุณากรอกเบอร์โทรและเลขห้อง'); return; }
+
+  // Validate format
+  const cleanPhone = phoneRaw.replace(/-/g,'');
+  if (!/^\d{9,10}$/.test(cleanPhone)) { showLoginErr('รูปแบบเบอร์โทรไม่ถูกต้อง'); return; }
+  if (!/^[A-Z0-9]{1,10}$/.test(roomInput)) { showLoginErr('เลขห้องไม่ถูกต้อง'); return; }
 
   const btn = document.getElementById('login-btn');
   btn.disabled = true; btn.textContent = 'กำลังตรวจสอบ...';
 
-  const cleanPhone = phone.replace(/-/g,'');
+  try {
+    const { data, error } = await sb.from('tenants')
+      .select('id,name,room,phone,address,created_at')  // ตัด id_card ออกจาก client
+      .ilike('room', roomInput)
+      .limit(10);
 
-  // Query directly with both filters — no full table scan
-  const { data, error } = await sb.from('tenants')
-    .select('id,name,room,phone,id_card,address,created_at')
-    .ilike('room', roomInput)   // case-insensitive room match
-    .limit(10);                  // small safety cap
+    if (error) throw error;
 
-  btn.disabled = false; btn.innerHTML = '🔐 เข้าสู่ระบบ';
+    const tenant = (data||[]).find(t => (t.phone||'').replace(/-/g,'') === cleanPhone);
+    if (!tenant) {
+      recordFailedLogin();
+      showLoginErr('เบอร์โทรหรือเลขห้องไม่ถูกต้อง');
+      return;
+    }
 
-  if (error) { showLoginErr('ไม่พบข้อมูล กรุณาติดต่อผู้ดูแล'); return; }
-
-  // Verify phone client-side (phone may have different formats)
-  const tenant = (data||[]).find(t => t.phone.replace(/-/g,'') === cleanPhone);
-  if (!tenant) { showLoginErr('เบอร์โทรหรือเลขห้องไม่ถูกต้อง'); return; }
-
-  currentTenant = tenant;
-  localStorage.setItem('saved_tenant', JSON.stringify(tenant));
-  showBillScreen();
+    clearLoginCounters();
+    currentTenant = tenant;
+    // Use sessionStorage by default — clears on close. localStorage แบบ opt-in (อนาคต)
+    sessionStorage.setItem('saved_tenant', JSON.stringify(tenant));
+    showBillScreen();
+  } catch (e) {
+    showLoginErr('ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🔐 เข้าสู่ระบบ';
+  }
 }
 
 function showLoginErr(msg) {
@@ -310,33 +407,43 @@ function showLoginErr(msg) {
 }
 
 // ============================================================
-// BILL SCREEN — show instantly, load in parallel
+// BILL SCREEN
 // ============================================================
 function showBillScreen() {
   document.getElementById('screen-login').classList.add('hidden');
   document.getElementById('screen-login').style.display = 'none';
-  const bill = document.getElementById('screen-bill');
-  bill.style.display = 'block';
+  document.getElementById('screen-bill').style.display = 'block';
   document.getElementById('tb-room').textContent = 'ห้อง ' + (currentTenant.room||'—');
   document.getElementById('tb-name').textContent = currentTenant.name||'';
 
-  // Load bills + start realtime in parallel (don't await)
   loadAllBills();
   startRealtime();
 }
 
 // ============================================================
-// LOAD BILLS — exclude payment_qr from list query
-// Fetch active bill detail in parallel with bill list
+// LOAD BILLS — paginated
 // ============================================================
 async function loadAllBills() {
-  // Lightweight list: no payment_qr (huge base64)
-  const { data } = await sb.from('bills')
+  billsOffset = 0;
+  const { data, error } = await sb.from('bills')
     .select('id,tenant_id,room,tenant_name,month_label,total,status,issued_at')
     .eq('tenant_id', currentTenant.id)
-    .order('issued_at', { ascending: false });
+    .order('issued_at', { ascending: false })
+    .range(0, BILLS_PAGE_SIZE - 1);
+
+  if (error) {
+    document.getElementById('bill-content').innerHTML =
+      `<div class="empty"><div style="font-size:40px;margin-bottom:10px;opacity:.3">⚠️</div>
+       <div style="font-family:'Prompt',sans-serif;font-size:17px;margin-bottom:6px">โหลดข้อมูลไม่ได้</div>
+       <div style="font-size:13px">กรุณาตรวจสอบการเชื่อมต่อ</div>
+       <button class="btn btn-primary" style="margin-top:14px" onclick="loadAllBills()">ลองใหม่</button></div>`;
+    return;
+  }
 
   allBills = data || [];
+  billsOffset = allBills.length;
+  billsHasMore = allBills.length === BILLS_PAGE_SIZE;
+  document.getElementById('loadMoreBtn').style.display = billsHasMore ? 'block' : 'none';
   renderMonthTabs();
 
   if (!allBills.length) {
@@ -347,9 +454,28 @@ async function loadAllBills() {
     return;
   }
 
-  // Select active bill (first unpaid, else latest)
   const active = allBills.find(b => b.status==='pending' || b.status==='partial') || allBills[0];
   await selectBill(active.id);
+}
+
+async function loadMoreBills() {
+  const btn = document.getElementById('loadMoreBtn');
+  btn.disabled = true; btn.textContent = 'กำลังโหลด...';
+  const { data, error } = await sb.from('bills')
+    .select('id,tenant_id,room,tenant_name,month_label,total,status,issued_at')
+    .eq('tenant_id', currentTenant.id)
+    .order('issued_at', { ascending: false })
+    .range(billsOffset, billsOffset + BILLS_PAGE_SIZE - 1);
+  btn.disabled = false; btn.textContent = 'โหลดบิลเก่ากว่านี้';
+  if (error || !data) return;
+  // Dedup
+  const existing = new Set(allBills.map(b => b.id));
+  const newOnes = data.filter(b => !existing.has(b.id));
+  allBills = allBills.concat(newOnes);
+  billsOffset += data.length;
+  billsHasMore = data.length === BILLS_PAGE_SIZE;
+  btn.style.display = billsHasMore ? 'block' : 'none';
+  renderMonthTabs();
 }
 
 function renderMonthTabs() {
@@ -361,22 +487,24 @@ function renderMonthTabs() {
   tabs.innerHTML = allBills.map(b => {
     const isPending = b.status==='pending' || b.status==='partial';
     const isActive  = currentBill && currentBill.id === b.id;
-    return `<div class="month-tab${isActive?' active':''}${isPending&&!isActive?' has-pending':''}" onclick="selectBill('${b.id}')">${esc(b.month_label)}</div>`;
+    return `<div class="month-tab${isActive?' active':''}${isPending&&!isActive?' has-pending':''}" data-bill-id="${esc(b.id)}">${esc(b.month_label)}</div>`;
   }).join('');
+  // Bind events (avoid inline onclick with templated id)
+  tabs.querySelectorAll('.month-tab').forEach(el => {
+    el.addEventListener('click', () => selectBill(el.dataset.billId));
+  });
 }
 
 // ============================================================
-// SELECT BILL — cache full detail to avoid re-fetching
+// SELECT BILL
 // ============================================================
 async function selectBill(billId) {
-  // Update active tab immediately for snappy feel
-  const prevBillId = currentBill?.id;
-  const billMeta   = allBills.find(b => b.id === billId);
+  const billMeta = allBills.find(b => b.id === billId);
   if (!billMeta) return;
+  const prevBillId = currentBill?.id;
   currentBill = billMeta;
-  if (prevBillId !== billId) renderMonthTabs(); // re-render tabs with new active
+  if (prevBillId !== billId) renderMonthTabs();
 
-  // Serve from cache if available
   if (billDetailCache[billId]) {
     const { bill, pays } = billDetailCache[billId];
     currentBill = bill;
@@ -385,7 +513,6 @@ async function selectBill(billId) {
     return;
   }
 
-  // Fetch full bill (with payment_qr) + payments in parallel
   const [billRes, paysRes] = await Promise.all([
     sb.from('bills').select('*').eq('id', billId).single(),
     sb.from('payments').select('*').eq('bill_id', billId).order('paid_at')
@@ -393,16 +520,17 @@ async function selectBill(billId) {
 
   const bill = billRes.data;
   const pays = paysRes.data || [];
-  if (!bill) return;
+  if (!bill) {
+    showToast('โหลดบิลไม่สำเร็จ', 'danger');
+    return;
+  }
 
-  // Cache for this session
   billDetailCache[billId] = { bill, pays };
   currentBill = bill;
   currentPays = pays;
   renderBill(bill, pays);
 }
 
-// Invalidate cache for a bill (call after new payment submitted)
 function invalidateBill(billId) {
   delete billDetailCache[billId];
 }
@@ -418,26 +546,24 @@ const PILL_MAP = {
 };
 
 function amtRow(name, detail, amount, cls) {
-  return `<div class="amt-row"><div class="al"><span class="an">${name}</span><span class="ad">${detail}</span></div><span class="ap ${cls}">${fmt(amount)} บาท</span></div>`;
+  return `<div class="amt-row"><div class="al"><span class="an">${esc(name)}</span><span class="ad">${esc(detail)}</span></div><span class="ap ${cls}">${fmt(amount)} บาท</span></div>`;
 }
 
 function renderBill(b, pays) {
   const verifiedTotal = pays.filter(p => p.status==='verified').reduce((s,p) => s+(p.amount||0), 0);
   const remaining     = Math.max(0, (b.total||0) - verifiedTotal);
-  const [pcls, ptxt]  = PILL_MAP[b.status] || ['hp-pending', b.status];
+  const [pcls, ptxt]  = PILL_MAP[b.status] || ['hp-pending', esc(b.status||'')];
 
   const parts = [];
 
-  // Hero
   parts.push(`<div class="bill-hero">
     <div class="hero-month">ประจำเดือน ${esc(b.month_label)}</div>
     <div class="hero-amount">${fmt(b.total)}<span style="font-size:22px;font-weight:600"> บาท</span></div>
     <div><span class="hero-pill ${pcls}">${ptxt}</span></div>
   </div>`);
 
-  // Breakdown card
   parts.push(`<div class="card" style="animation-delay:.05s"><div class="card-head"><div class="cdot" style="background:var(--elec)"></div><span class="card-title">รายละเอียดค่าใช้จ่าย</span></div>`);
-  if (b.rent  > 0) parts.push(amtRow('🏠 ค่าห้องพัก', 'ประจำเดือน '+esc(b.month_label), b.rent,  'r'));
+  if (b.rent  > 0) parts.push(amtRow('🏠 ค่าห้องพัก', 'ประจำเดือน '+(b.month_label||''), b.rent,  'r'));
   if (b.water > 0) parts.push(amtRow('💧 ค่าน้ำ',     'ใช้ไป '+(b.water_units||0)+' หน่วย', b.water, 'w'));
   if (b.elec  > 0) parts.push(amtRow('⚡ ค่าไฟ',      'ใช้ไป '+(b.elec_units||0)+' หน่วย',  b.elec,  'e'));
   if (b.fine  > 0) parts.push(amtRow('⚠️ ค่าปรับ',   b.fine_reason||'',                      b.fine,  'f'));
@@ -450,13 +576,13 @@ function renderBill(b, pays) {
     parts.push(`<div class="remaining-box done"><div style="font-size:12px;color:var(--ok)">ชำระครบแล้ว ✅</div><div style="font-family:'Prompt',sans-serif;font-size:18px;font-weight:800;color:var(--ok)">${fmt(b.total)} บาท</div></div>`);
   parts.push('</div>');
 
-  // Payment channel card
-  const hasQr   = !!b.payment_qr;
+  const qrSafe = safeUrl(b.payment_qr);
+  const hasQr   = !!qrSafe;
   const hasBank = !!(b.bank_number || b.bank_name);
   if (hasQr || hasBank) {
     parts.push(`<div class="card" style="animation-delay:.1s"><div class="card-head"><div class="cdot" style="background:var(--ok)"></div><span class="card-title">💳 ช่องทางชำระเงิน</span></div>`);
     if (hasQr)
-      parts.push(`<div style="text-align:center;margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:8px">QR พร้อมเพย์</div><img src="${b.payment_qr}" class="qr-img" loading="lazy"><div style="font-size:11px;color:var(--muted);margin-top:6px">สแกนด้วย Mobile Banking</div></div>`);
+      parts.push(`<div style="text-align:center;margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:8px">QR พร้อมเพย์</div><img src="${esc(qrSafe)}" class="qr-img" loading="lazy" alt="QR Code"><div style="font-size:11px;color:var(--muted);margin-top:6px">สแกนด้วย Mobile Banking</div></div>`);
     if (hasQr && hasBank)
       parts.push(`<div style="height:1px;background:var(--border);margin:12px 0"></div>`);
     if (hasBank)
@@ -464,20 +590,19 @@ function renderBill(b, pays) {
     parts.push('</div>');
   }
 
-  // Payment action card
   if (b.status !== 'confirmed' && remaining > 0) {
     parts.push(`<div class="card" style="animation-delay:.15s"><div class="card-head"><div class="cdot" style="background:var(--rent)"></div><span class="card-title">📤 แจ้งชำระเงิน</span></div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="fg" style="margin-bottom:0"><label>จำนวนเงินที่ชำระ (บาท)</label><input type="number" id="pay-amount" placeholder="${fmt(remaining)}" value="${remaining}"></div>
-        <div class="fg" style="margin-bottom:0"><label>หมายเหตุ (ไม่บังคับ)</label><input type="text" id="pay-note" placeholder="เช่น โอนบางส่วน"></div>
+        <div class="fg" style="margin-bottom:0"><label>จำนวนเงินที่ชำระ (บาท)</label><input type="number" id="pay-amount" placeholder="${fmt(remaining)}" value="${remaining}" min="0.01" max="${remaining}" step="0.01"></div>
+        <div class="fg" style="margin-bottom:0"><label>หมายเหตุ (ไม่บังคับ)</label><input type="text" id="pay-note" placeholder="เช่น โอนบางส่วน" maxlength="200"></div>
         <div><label style="display:block;margin-bottom:6px">สลิปการโอนเงิน</label>
           <div class="upload-zone" id="uploadZone" onclick="document.getElementById('slipInput').click()">
             <div id="uploadPlaceholder"><div style="font-size:28px;margin-bottom:6px">📎</div><div style="font-size:13px;color:var(--muted)">คลิกเพื่อเลือกรูปสลิป</div><div style="font-size:11px;color:var(--muted);margin-top:3px">PNG, JPG ไม่เกิน 5MB</div></div>
-            <img id="slipPreview" style="display:none" class="upload-preview">
+            <img id="slipPreview" style="display:none" class="upload-preview" alt="สลิป">
           </div>
-          <input type="file" id="slipInput" accept="image/*" style="display:none" onchange="handleSlip(event)">
+          <input type="file" id="slipInput" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none" onchange="handleSlip(event)">
         </div>
-        <button class="btn btn-success btn-full" id="submitPayBtn" onclick="submitPayment('${b.id}')">📤 ส่งหลักฐานการชำระ</button>
+        <button class="btn btn-success btn-full" id="submitPayBtn" onclick="submitPayment('${esc(b.id)}', ${remaining})">📤 ส่งหลักฐานการชำระ</button>
       </div></div>`);
   } else if (b.status === 'confirmed') {
     parts.push(`<div class="card" style="animation-delay:.15s;border-color:#bbf7d0;background:#f0fdf4">
@@ -496,24 +621,28 @@ function renderBill(b, pays) {
       </div></div>`);
   }
 
-  // Payment history
   if (pays.length) {
     parts.push(`<div class="card" style="animation-delay:.2s"><div class="card-head"><div class="cdot" style="background:var(--muted)"></div><span class="card-title">ประวัติการชำระ</span></div>`);
     pays.forEach(p => {
       const pillCls = p.status==='verified' ? 'pv' : p.status==='rejected' ? 'pr' : 'pp';
       const pillTxt = p.status==='verified' ? '✅ ยืนยัน' : p.status==='rejected' ? '❌ ปฏิเสธ' : '🔍 รอตรวจ';
+      const slipSafe = safeUrl(p.slip_url);
       parts.push(`<div class="ph-item"><div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div><div style="font-weight:700;font-size:15px">${fmt(p.amount)} บาท</div>
-        <div style="font-size:11px;color:var(--muted)">${new Date(p.paid_at).toLocaleString('th-TH')}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(new Date(p.paid_at).toLocaleString('th-TH'))}</div>
         ${p.note ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(p.note)}</div>` : ''}
         </div><span class="pill ${pillCls}">${pillTxt}</span></div>
-        ${p.slip_url ? `<img src="${p.slip_url}" style="max-width:100%;border-radius:9px;margin-top:8px;max-height:160px;object-fit:contain;cursor:pointer" loading="lazy" onclick="window.open('${p.slip_url}','_blank')">` : ''}
+        ${slipSafe ? `<img src="${esc(slipSafe)}" data-slip="${esc(slipSafe)}" style="max-width:100%;border-radius:9px;margin-top:8px;max-height:160px;object-fit:contain;cursor:pointer" loading="lazy" alt="สลิปการโอน">` : ''}
       </div>`);
     });
     parts.push('</div>');
   }
 
   document.getElementById('bill-content').innerHTML = parts.join('');
+  // Bind slip image click handlers (avoid inline JS with URLs)
+  document.querySelectorAll('[data-slip]').forEach(img => {
+    img.addEventListener('click', () => window.open(img.dataset.slip, '_blank', 'noopener'));
+  });
   slipFile = null;
 }
 
@@ -522,7 +651,14 @@ function renderBill(b, pays) {
 // ============================================================
 function handleSlip(e) {
   const f = e.target.files[0]; if (!f) return;
-  if (f.size > 5*1024*1024) { alert('รูปใหญ่เกิน 5MB'); return; }
+  // Validate type
+  if (!/^image\/(png|jpe?g|webp)$/i.test(f.type)) {
+    alert('รองรับเฉพาะไฟล์รูปภาพ (PNG, JPG, WEBP)');
+    e.target.value = ''; return;
+  }
+  if (f.size > 5*1024*1024) {
+    alert('รูปใหญ่เกิน 5MB'); e.target.value = ''; return;
+  }
   slipFile = f;
   const r = new FileReader();
   r.onload = ev => {
@@ -535,70 +671,75 @@ function handleSlip(e) {
 }
 
 // ============================================================
-// SUBMIT PAYMENT — upload + insert + notify in optimal order
+// SUBMIT PAYMENT — proper error handling, no orphan slips
 // ============================================================
-async function submitPayment(billId) {
+async function submitPayment(billId, maxRemaining) {
   const amount = parseFloat(document.getElementById('pay-amount').value);
-  const note   = document.getElementById('pay-note').value.trim();
-  if (!amount || amount <= 0) { alert('กรุณากรอกจำนวนเงิน'); return; }
+  const note   = document.getElementById('pay-note').value.trim().substring(0, 200);
+
+  if (!amount || amount <= 0) { alert('กรุณากรอกจำนวนเงินที่ถูกต้อง'); return; }
+  if (amount > maxRemaining + 0.01) { alert(`ยอดต้องไม่เกินค้างชำระ ${fmt(maxRemaining)} บาท`); return; }
   if (!slipFile) { alert('กรุณาแนบสลิปการโอนเงิน'); return; }
 
   const btn = document.getElementById('submitPayBtn');
   btn.disabled = true; btn.textContent = 'กำลังอัปโหลด...';
 
-  // Upload slip
-  let slipUrl = '';
+  let uploadedPath = null;
   try {
-    const ext  = slipFile.name.split('.').pop();
-    const path = `slips/${billId}_${Date.now()}.${ext}`;
-    const { error: upErr } = await sb.storage.from('slips').upload(path, slipFile);
-    if (upErr) throw upErr;
-    slipUrl = sb.storage.from('slips').getPublicUrl(path).data.publicUrl;
-  } catch(e) {
+    // 1. Upload slip
+    const ext  = (slipFile.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,5) || 'png';
+    const path = `slips/${billId}_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('slips').upload(path, slipFile, {
+      cacheControl: '3600',
+      upsert: false
+    });
+    if (upErr) throw new Error('อัปโหลดสลิปไม่สำเร็จ: ' + upErr.message);
+    uploadedPath = path;
+    const slipUrl = sb.storage.from('slips').getPublicUrl(path).data.publicUrl;
+
+    // 2. Insert payment
+    btn.textContent = 'กำลังบันทึก...';
+    const { error: payErr } = await sb.from('payments').insert({
+      bill_id: billId, amount, slip_url: slipUrl, note, status: 'pending_verify'
+    });
+    if (payErr) throw new Error('บันทึกการชำระไม่สำเร็จ: ' + payErr.message);
+
+    // 3. Notification + bill status (parallel, non-blocking failures)
+    await Promise.allSettled([
+      sb.from('notifications').insert({
+        type: 'payment_submitted', bill_id: billId,
+        message: `ห้อง ${currentTenant.room} — ${currentTenant.name} ส่งหลักฐานชำระ ${amount.toLocaleString('th-TH')} บาท`
+      }),
+      sb.from('bills').update({ status: 'paid' }).eq('id', billId)
+    ]);
+
+    // Success — invalidate cache, refresh
+    slipFile = null;
+    invalidateBill(billId);
+    const idx = allBills.findIndex(b => b.id === billId);
+    if (idx !== -1) allBills[idx] = { ...allBills[idx], status: 'paid' };
+    await selectBill(billId);
+    renderMonthTabs();
+    showToast('✅ ส่งหลักฐานสำเร็จ! รอเจ้าของหอยืนยัน', 'ok');
+
+  } catch (e) {
+    // Cleanup orphan slip if upload succeeded but insert failed
+    if (uploadedPath) {
+      sb.storage.from('slips').remove([uploadedPath]).catch(()=>{});
+    }
+    alert(e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+  } finally {
     btn.disabled = false; btn.innerHTML = '📤 ส่งหลักฐานการชำระ';
-    alert('อัปโหลดสลิปไม่สำเร็จ: ' + (e.message||e)); return;
   }
-
-  btn.textContent = 'กำลังบันทึก...';
-
-  // Insert payment + notification in parallel
-  const [payRes] = await Promise.all([
-    sb.from('payments').insert({ bill_id:billId, amount, slip_url:slipUrl, note, status:'pending_verify' }),
-    sb.from('notifications').insert({
-      type: 'payment_submitted', bill_id: billId,
-      message: `ห้อง ${currentTenant.room} — ${currentTenant.name} ส่งหลักฐานชำระ ${amount.toLocaleString('th-TH')} บาท`
-    })
-  ]);
-
-  if (payRes.error) {
-    btn.disabled = false; btn.innerHTML = '📤 ส่งหลักฐานการชำระ';
-    alert('เกิดข้อผิดพลาด: ' + payRes.error.message); return;
-  }
-
-  // Update bill status optimistically (no extra query)
-  // We know: has pending_verify slip → status = 'paid'
-  await sb.from('bills').update({ status: 'paid' }).eq('id', billId);
-
-  slipFile = null;
-  invalidateBill(billId);
-
-  // Update allBills list status
-  const idx = allBills.findIndex(b => b.id === billId);
-  if (idx !== -1) allBills[idx] = { ...allBills[idx], status: 'paid' };
-
-  // Reload detail fresh
-  await selectBill(billId);
-  renderMonthTabs();
-
-  btn.disabled = false; btn.innerHTML = '📤 ส่งหลักฐานการชำระ';
-  showToast('✅ ส่งหลักฐานสำเร็จ! รอเจ้าของหอยืนยัน', 'ok');
 }
 
 // ============================================================
-// REALTIME
+// REALTIME — with auto-reconnect + exponential backoff
 // ============================================================
 function startRealtime() {
-  if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  cleanupRealtime();
+  if (!currentTenant) return;
+
   realtimeChannel = sb.channel('tenant-' + currentTenant.id)
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'bills', filter:'tenant_id=eq.'+currentTenant.id },
       async () => {
@@ -613,30 +754,41 @@ function startRealtime() {
         if (s==='confirmed') showToast('✅ เจ้าของหอยืนยันรับชำระแล้ว!', 'ok');
         else if (s==='partial') showToast('💧 ยืนยันชำระบางส่วนแล้ว', 'ok');
 
-        // Update local allBills list
         const idx = allBills.findIndex(b => b.id === payload.new.id);
         if (idx !== -1) allBills[idx] = { ...allBills[idx], ...payload.new };
-
-        // Invalidate cache so next selectBill re-fetches
         invalidateBill(payload.new.id);
-
-        if (currentBill?.id === payload.new.id) {
-          await selectBill(payload.new.id);
-        }
+        if (currentBill?.id === payload.new.id) await selectBill(payload.new.id);
         renderMonthTabs();
       })
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'payments' },
       async payload => {
-        if (payload.new.status === 'verified') {
-          showToast('✅ สลิปได้รับการยืนยัน!', 'ok');
-        } else if (payload.new.status === 'rejected') {
-          showToast('❌ สลิปถูกปฏิเสธ กรุณาส่งใหม่', 'danger');
-        }
-        // Invalidate bill that this payment belongs to
+        // Only handle payments for current tenant's bills
+        if (!allBills.some(b => b.id === payload.new.bill_id)) return;
+        if (payload.new.status === 'verified') showToast('✅ สลิปได้รับการยืนยัน!', 'ok');
+        else if (payload.new.status === 'rejected') showToast('❌ สลิปถูกปฏิเสธ กรุณาส่งใหม่', 'danger');
         if (payload.new.bill_id) invalidateBill(payload.new.bill_id);
         if (currentBill?.id === payload.new.bill_id) await selectBill(currentBill.id);
       })
-    .subscribe();
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        realtimeRetryCount = 0;
+        document.getElementById('connBanner').style.display = 'none';
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        scheduleReconnect();
+      }
+    });
+}
+
+function scheduleReconnect() {
+  if (realtimeRetryTimer) return;
+  realtimeRetryCount = Math.min(realtimeRetryCount + 1, 6);
+  const delay = Math.min(1000 * Math.pow(2, realtimeRetryCount - 1), 30000);
+  document.getElementById('connMsg').textContent = `การเชื่อมต่อขาด — ลองใหม่ใน ${Math.round(delay/1000)} วินาที`;
+  document.getElementById('connBanner').style.display = 'flex';
+  realtimeRetryTimer = setTimeout(() => {
+    realtimeRetryTimer = null;
+    if (currentTenant) startRealtime();
+  }, delay);
 }
 
 // ============================================================
@@ -644,14 +796,16 @@ function startRealtime() {
 // ============================================================
 function showToast(msg, type='info') {
   const el = document.getElementById('tenantToast');
-  const s = {
+  const styles = {
     ok:     'background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;',
     danger: 'background:#fef2f2;border:1px solid #fecaca;color:#991b1b;',
     info:   'background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;'
   };
-  el.style.cssText += s[type] || s.info;
+  el.style.cssText = `display:block;position:fixed;top:62px;left:50%;transform:translateX(-50%);
+    z-index:999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;
+    font-family:'Sarabun',sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.12);
+    min-width:260px;text-align:center;transition:opacity .3s;opacity:1;` + (styles[type] || styles.info);
   el.textContent = msg;
-  el.style.display = 'block'; el.style.opacity = '1';
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.style.opacity='0'; setTimeout(()=>el.style.display='none',300); }, 4000);
 }
@@ -661,22 +815,27 @@ function showToast(msg, type='info') {
 // ============================================================
 function copyBankNum() {
   const num = document.getElementById('bnum')?.textContent;
-  if (!num) return;
+  if (!num || num === '—') return;
   navigator.clipboard.writeText(num).then(() => {
     const btn = document.querySelector('.copy-btn');
     if (btn) { btn.textContent='✅ คัดลอกแล้ว'; setTimeout(()=>btn.textContent='📋 คัดลอกเลขบัญชี',2000); }
+  }).catch(() => {
+    showToast('ไม่สามารถคัดลอกได้', 'danger');
   });
 }
 
 function logout() {
+  cleanupRealtime();
   currentTenant = null; currentBill = null; allBills = []; currentPays = []; billDetailCache = {};
+  billsOffset = 0; billsHasMore = false;
   localStorage.removeItem('saved_tenant');
-  if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  sessionStorage.removeItem('saved_tenant');
   document.getElementById('screen-bill').style.display = 'none';
   const login = document.getElementById('screen-login');
   login.classList.remove('hidden'); login.style.display = 'flex';
   document.getElementById('login-phone').value = '';
   document.getElementById('login-room').value  = '';
+  document.getElementById('connBanner').style.display = 'none';
 }
 
 // ============================================================
@@ -684,24 +843,58 @@ function logout() {
 // ============================================================
 function genReceiptNo(billId) {
   const hash = billId ? parseInt(billId.replace(/-/g,'').substring(0,8),16) : Math.floor(Math.random()*9000)+1000;
-  return String(hash%9000+1000).padStart(4,'0');
+  return String((hash%9000)+1000).padStart(4,'0');
 }
 
-function numToThaiText(n) {
-  const ones=['','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
-  const tens =['','สิบ','ยี่สิบ','สามสิบ','สี่สิบ','ห้าสิบ','หกสิบ','เจ็ดสิบ','แปดสิบ','เก้าสิบ'];
-  if (n===0) return 'ศูนย์บาทถ้วน';
-  const m=Math.round(n),th=Math.floor(m/1000),h=Math.floor((m%1000)/100),t=Math.floor((m%100)/10),o=m%10;
-  let r='';
-  if(th) r+=ones[th]+'พัน';if(h) r+=ones[h]+'ร้อย';
-  if(t)  r+=tens[t];if(o)  r+=(t===1&&o===1?'เอ็ด':ones[o]);
-  return r+'บาทถ้วน';
+// แปลงตัวเลขเป็นข้อความไทย — รองรับถึงล้าน
+function numToThaiText(num) {
+  num = Math.round(parseFloat(num) || 0);
+  if (num === 0) return 'ศูนย์บาทถ้วน';
+
+  const ones = ['','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+  const positions = ['','สิบ','ร้อย','พัน','หมื่น','แสน','ล้าน'];
+
+  function readGroup(n) {
+    // อ่านตัวเลข 1-999999
+    if (n === 0) return '';
+    let result = '';
+    const s = String(n);
+    const len = s.length;
+    for (let i = 0; i < len; i++) {
+      const d = parseInt(s[i], 10);
+      const pos = len - 1 - i; // 0=หน่วย, 1=สิบ, ...
+      if (d === 0) continue;
+      if (pos === 0) {
+        // หลักหน่วย
+        if (d === 1 && len > 1 && s[len-2] !== '0') result += 'เอ็ด';
+        else result += ones[d];
+      } else if (pos === 1) {
+        // หลักสิบ
+        if (d === 1) result += 'สิบ';
+        else if (d === 2) result += 'ยี่สิบ';
+        else result += ones[d] + 'สิบ';
+      } else {
+        result += ones[d] + positions[pos];
+      }
+    }
+    return result;
+  }
+
+  let text = '';
+  if (num >= 1000000) {
+    const millions = Math.floor(num / 1000000);
+    text += readGroup(millions) + 'ล้าน';
+    num = num % 1000000;
+  }
+  if (num > 0) text += readGroup(num);
+
+  return text + 'บาทถ้วน';
 }
 
 function openReceipt(bill, payments) {
-  const verifiedPays = (payments||[]).filter(p=>p.status==='verified');
   const now  = new Date(), receiptNo = genReceiptNo(bill.id);
-  const dorm = JSON.parse(localStorage.getItem('dorm_settings')||'{}');
+  let dorm = {};
+  try { dorm = JSON.parse(localStorage.getItem('dorm_settings')||'{}'); } catch(e) {}
   const dormName=dorm.name||'หอพัก',dormAddress=dorm.address||'',dormPhone=dorm.phone||'',dormOwner=dorm.owner||'',dormSigner=dorm.signer||dormOwner||'';
   const tenant = currentTenant||{};
   const dateStr = now.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
@@ -712,7 +905,7 @@ function openReceipt(bill, payments) {
   if(bill.rent  >0) rowItems.push([`ค่าเช่าห้อง (Room rate) ${esc(bill.room)} เดือน ${esc(bill.month_label)}`, bill.rent]);
   if(bill.water >0) rowItems.push([`ค่าน้ำ (Water rate) เดือน ${esc(bill.month_label)} (หน่วยที่ใช้ = ${bill.water_units||0} ยูนิต)`, bill.water]);
   if(bill.elec  >0) rowItems.push([`ค่าไฟฟ้า (Electrical rate) เดือน ${esc(bill.month_label)} (หน่วยที่ใช้ = ${bill.elec_units||0} ยูนิต)`, bill.elec]);
-  if(bill.fine  >0) rowItems.push([`ค่าปรับ (Fine)${bill.fine_reason?' - '+bill.fine_reason:''}`, bill.fine]);
+  if(bill.fine  >0) rowItems.push([`ค่าปรับ (Fine)${bill.fine_reason?' - '+esc(bill.fine_reason):''}`, bill.fine]);
 
   const rowsHTML = rowItems.map(([desc,amt],i)=>
     `<tr style="border-bottom:1px solid #e2e8f0"><td style="padding:7px 6px;text-align:center;color:#555">${i+1}</td><td style="padding:7px 6px">${desc}</td><td style="padding:7px 6px;text-align:right;font-weight:600;white-space:nowrap">${fmt(amt)}</td></tr>`
@@ -721,14 +914,11 @@ function openReceipt(bill, payments) {
   document.getElementById('receiptContent').innerHTML = `
   <style>
     .rc-wrap{font-family:'Sarabun',sans-serif;color:#111;font-size:13px}
-    /* header: 2-col on wide, stack on mobile */
     .rc-header{display:flex;justify-content:space-between;align-items:flex-start;
       margin-bottom:10px;border-bottom:2px solid #111;padding-bottom:10px;gap:12px}
     .rc-header-right{text-align:right;flex-shrink:0}
-    /* body: table + signature side-by-side on wide, stack on mobile */
     .rc-body{display:flex;gap:16px;align-items:flex-start}
     .rc-sig{width:190px;flex-shrink:0;border-left:1px dashed #ccc;padding-left:14px}
-    /* MOBILE: stack everything vertically */
     @media(max-width:540px){
       .rc-header{flex-direction:column}
       .rc-header-right{text-align:left;border-top:1px dashed #ccc;padding-top:8px;width:100%}
@@ -742,10 +932,10 @@ function openReceipt(bill, payments) {
   <div class="rc-wrap">
     <div class="rc-header">
       <div style="flex:1">
-        <div style="font-weight:800;font-size:15px">${dormName}</div>
-        ${dormAddress?`<div style="font-size:12px;margin-top:2px">${dormAddress}</div>`:''}
-        ${dormOwner?`<div style="font-size:12px">เลขประจำตัวผู้เสียภาษี ${dormOwner}</div>`:''}
-        ${dormPhone?`<div style="font-size:12px">โทร. ${dormPhone}</div>`:''}
+        <div style="font-weight:800;font-size:15px">${esc(dormName)}</div>
+        ${dormAddress?`<div style="font-size:12px;margin-top:2px">${esc(dormAddress)}</div>`:''}
+        ${dormOwner?`<div style="font-size:12px">เลขประจำตัวผู้เสียภาษี ${esc(dormOwner)}</div>`:''}
+        ${dormPhone?`<div style="font-size:12px">โทร. ${esc(dormPhone)}</div>`:''}
         <div style="margin-top:8px">
           <span style="font-weight:800">ลูกค้า (Customer)</span>
           <div style="margin-top:2px">${esc(bill.tenant_name)}</div>
@@ -757,11 +947,11 @@ function openReceipt(bill, payments) {
         <div class="rc-title" style="font-family:'Prompt',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">ใบเสร็จรับเงิน<br><span style="font-size:13px;font-weight:600">(Receipt)</span></div>
         <div style="font-size:12px;line-height:1.8">
           <div style="font-weight:700">ต้นฉบับ (Original)</div>
-          <div>เลขที่ ${fullReceiptNo}</div>
-          <div>วันที่ ${dateStr}</div>
+          <div>เลขที่ ${esc(fullReceiptNo)}</div>
+          <div>วันที่ ${esc(dateStr)}</div>
           <div>ห้อง ${esc(bill.room)}</div>
-          ${dormSigner?`<div>พนักงาน ${dormSigner}</div>`:''}
-          <div>อ้างอิง ${invNo}</div>
+          ${dormSigner?`<div>พนักงาน ${esc(dormSigner)}</div>`:''}
+          <div>อ้างอิง ${esc(invNo)}</div>
         </div>
       </div>
     </div>
@@ -776,7 +966,7 @@ function openReceipt(bill, payments) {
           <tbody>${rowsHTML}</tbody>
         </table>
         <div style="border-top:2px solid #111;padding-top:8px;margin-top:4px">
-          <div style="font-size:11px;color:#555;margin-bottom:6px">(${numToThaiText(bill.total)})</div>
+          <div style="font-size:11px;color:#555;margin-bottom:6px">(${esc(numToThaiText(bill.total))})</div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div style="font-weight:800;font-size:13px">รวมทั้งสิ้น</div>
             <div style="font-weight:800;font-size:18px">${fmt(bill.total)} บาท</div>
@@ -785,14 +975,14 @@ function openReceipt(bill, payments) {
       </div>
       <div class="rc-sig">
         <div style="font-weight:700;margin-bottom:4px">หมายเหตุ</div>
-        <div style="font-size:12px;color:#555;min-height:24px;margin-bottom:16px">${bill.fine_reason||'-'}</div>
+        <div style="font-size:12px;color:#555;min-height:24px;margin-bottom:16px">${esc(bill.fine_reason||'-')}</div>
         <div style="font-size:12px">ลงชื่อ ......................................</div>
-        <div style="font-size:12px;margin-top:8px">( ${dormSigner||'..............................'} )</div>
+        <div style="font-size:12px;margin-top:8px">( ${esc(dormSigner||'..............................')} )</div>
         <div style="font-size:11px;color:#555;margin-top:3px">ผู้รับเงิน</div>
       </div>
     </div>
     <div style="border-top:1px dashed #bbb;margin-top:14px;padding-top:6px;text-align:center;font-size:10px;color:#aaa">
-      เอกสารออกโดยระบบอัตโนมัติ • ${fullReceiptNo} • ${dateStr}</div>
+      เอกสารออกโดยระบบอัตโนมัติ • ${esc(fullReceiptNo)} • ${esc(dateStr)}</div>
   </div>`;
   document.getElementById('receiptModal').style.display = 'flex';
 }
@@ -800,10 +990,11 @@ function openReceipt(bill, payments) {
 const closeReceipt = () => { document.getElementById('receiptModal').style.display='none'; };
 const printReceipt = () => { window.print(); };
 
-async function downloadReceipt() {
-  const btn = event.target; btn.textContent='กำลังโหลด...'; btn.disabled=true;
+async function downloadReceipt(ev) {
+  const btn = (ev && ev.target) || document.getElementById('dlReceiptBtn');
+  const originalText = btn.textContent;
+  btn.textContent='กำลังโหลด...'; btn.disabled=true;
   try {
-    // Load both libs in parallel if not already present
     await Promise.all([
       window.html2canvas ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
       window.jspdf        ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
@@ -817,14 +1008,15 @@ async function downloadReceipt() {
     pdf.save(`ใบเสร็จ_RC${genReceiptNo(currentBill?.id)}_ห้อง${currentBill?.room||''}_${currentBill?.month_label||''}.pdf`);
   } catch(e) {
     alert('โหลด PDF ไม่สำเร็จ กรุณาใช้ปุ่มพิมพ์แทน');
+  } finally {
+    btn.textContent = originalText || '⬇️ โหลด PDF'; btn.disabled = false;
   }
-  btn.textContent='⬇️ โหลด PDF'; btn.disabled=false;
 }
 
 function loadScript(src) {
   return new Promise((res,rej) => {
     const s = document.createElement('script');
-    s.src=src; s.onload=res; s.onerror=rej;
+    s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Load failed: '+src));
     document.head.appendChild(s);
   });
 }
