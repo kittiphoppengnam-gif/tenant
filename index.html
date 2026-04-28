@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f172a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Prompt:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -22,17 +22,16 @@
   --text:#0f172a;--muted:#64748b;--radius:18px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 80% 60% at 50% -20%,rgba(2,132,199,.06) 0%,transparent 60%),
-             radial-gradient(ellipse 50% 40% at 10% 90%,rgba(124,58,237,.04) 0%,transparent 60%)}
+body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;min-height:100vh;
+  -webkit-tap-highlight-color:transparent}
+/* ลบ radial gradient overlay ออก — กิน GPU ตอน scroll */
 #screen-login{display:flex;align-items:center;justify-content:center;padding:20px;
   position:fixed;inset:0;z-index:100;background:var(--bg)}
 #screen-login.hidden{display:none}
 #screen-bill{display:none;position:relative;z-index:1;min-height:100vh}
 .login-box{background:var(--surf);border:1px solid var(--border);border-radius:24px;
   padding:36px 28px;max-width:380px;width:100%;animation:fadeUp .4s ease both;
-  box-shadow:0 8px 40px rgba(0,0,0,.10)}
+  box-shadow:0 4px 16px rgba(0,0,0,.08)}
 .login-logo{text-align:center;margin-bottom:28px}
 .login-logo h1{font-family:'Prompt',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px}
 .login-logo p{font-size:13px;color:var(--muted)}
@@ -40,31 +39,31 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em}
 input,select{background:var(--surf2);border:1px solid var(--border);border-radius:10px;
   color:var(--text);font-family:'Sarabun',sans-serif;font-size:15px;padding:11px 14px;
-  outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
-input:focus,select:focus{border-color:var(--water);box-shadow:0 0 0 3px rgba(2,132,199,.1)}
+  outline:none;transition:border-color .2s;width:100%}
+input:focus,select:focus{border-color:var(--water);box-shadow:0 0 0 2px rgba(2,132,199,.1)}
 input::placeholder{color:var(--muted)}
 .login-err{color:var(--danger);font-size:13px;text-align:center;margin-bottom:10px;
   background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:9px;padding:9px;display:none}
 .login-note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.7}
 .btn{padding:11px 20px;border-radius:11px;border:none;font-family:'Prompt',sans-serif;
-  font-size:14px;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s,opacity .15s;
+  font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;
   display:inline-flex;align-items:center;gap:7px;justify-content:center}
-.btn-primary{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;box-shadow:0 3px 14px rgba(2,132,199,.3)}
-.btn-primary:hover{transform:translateY(-1px)}
-.btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff;box-shadow:0 3px 14px rgba(5,150,105,.3)}
-.btn-success:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff}
+.btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
 .btn-ghost{background:var(--surf2);border:1px solid var(--border);color:var(--text)}
 .btn-ghost:hover{background:var(--surf3)}
 .btn-full{width:100%}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
-.topbar{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);
+.btn:active{opacity:.85}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* topbar: ลบ backdrop-filter (กิน GPU บน Android), ใช้ solid bg แทน */
+.topbar{background:#fff;
   border-bottom:1px solid var(--border);padding:0 16px;height:52px;
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:50;box-shadow:0 1px 8px rgba(0,0,0,.06)}
+  position:sticky;top:0;z-index:50}
 .topbar-room{font-family:'Prompt',sans-serif;font-size:14px;font-weight:800;color:var(--water)}
 .topbar-name{font-size:12px;color:var(--muted)}
-.btn-logout{background:none;border:1px solid rgba(220,38,38,.3);color:#dc2626;cursor:pointer;
-  font-size:12px;padding:5px 12px;border-radius:7px;transition:background .15s;
+.btn-logout{border:1px solid rgba(220,38,38,.3);color:#dc2626;cursor:pointer;
+  font-size:12px;padding:5px 12px;border-radius:7px;
   font-family:'Sarabun',sans-serif;background:rgba(220,38,38,.05)}
 .btn-logout:hover{background:rgba(220,38,38,.1)}
 .notif-banner{background:#eff6ff;border-bottom:2px solid #bfdbfe;padding:12px 16px;
@@ -87,7 +86,7 @@ input::placeholder{color:var(--muted)}
   border-radius:10px;color:var(--muted);font-size:12px;font-family:'Prompt',sans-serif;cursor:pointer}
 .load-more:hover{background:var(--surf3);color:var(--text)}
 .card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
-  padding:18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);animation:fadeUp .35s ease both}
+  padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .card-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
 .cdot{width:8px;height:8px;border-radius:50%}
 .card-title{font-family:'Prompt',sans-serif;font-size:13px;font-weight:700}
@@ -98,17 +97,14 @@ input::placeholder{color:var(--muted)}
 .ap{font-family:'Prompt',sans-serif;font-size:15px;font-weight:700}
 .ap.w{color:var(--water)}.ap.e{color:var(--elec)}.ap.r{color:var(--rent)}.ap.f{color:var(--danger)}
 .grand-row{display:flex;justify-content:space-between;align-items:center;padding:13px;
-  background:linear-gradient(135deg,rgba(2,132,199,.07),rgba(217,119,6,.05));
+  background:#f0f9ff;
   border:1px solid rgba(2,132,199,.2);border-radius:12px;margin-top:10px}
 .gl{font-family:'Prompt',sans-serif;font-size:13px;font-weight:700}
-.ga{font-family:'Prompt',sans-serif;font-size:20px;font-weight:800;
-  background:linear-gradient(90deg,var(--water),var(--elec));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+/* gradient text เปลี่ยนเป็นสีเดียว — gradient text บังคับ paint ทั้ง element ตอน scroll */
+.ga{font-family:'Prompt',sans-serif;font-size:20px;font-weight:800;color:var(--water)}
 .bill-hero{text-align:center;padding:24px 16px 16px}
 .hero-month{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
-.hero-amount{font-family:'Prompt',sans-serif;font-size:48px;font-weight:800;line-height:1;
-  background:linear-gradient(135deg,#0284c7,#d97706);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-amount{font-family:'Prompt',sans-serif;font-size:48px;font-weight:800;line-height:1;color:var(--water)}
 .hero-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;
   font-size:12px;font-weight:700;margin-top:10px;border:1px solid}
 .hp-pending{background:#fffbeb;border-color:#fde68a;color:#92400e}
@@ -128,17 +124,24 @@ input::placeholder{color:var(--muted)}
 .copy-btn{background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.25);border-radius:8px;
   color:var(--elec);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;
   width:100%;margin-top:8px;font-family:'Sarabun',sans-serif}
-.copy-btn:hover{background:rgba(217,119,6,.15)}
+.copy-btn:active{background:rgba(217,119,6,.15)}
 .upload-zone{border:2px dashed var(--border);border-radius:12px;padding:18px;text-align:center;
-  cursor:pointer;transition:border-color .2s,background .2s;background:var(--surf2)}
-.upload-zone:hover,.upload-zone.has{border-color:rgba(5,150,105,.5)}
+  cursor:pointer;background:var(--surf2)}
+.upload-zone.has{border-color:rgba(5,150,105,.5)}
+/* รูปสลิป + QR: บังคับ contain ที่ size เล็ก ลด memory ตอน scroll */
 .upload-preview{max-width:100%;border-radius:10px;margin-top:10px;max-height:200px;object-fit:contain}
-.ph-item{background:var(--surf2);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:8px}
+.ph-item{background:var(--surf2);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:8px;
+  contain:content}
+.ph-item img{content-visibility:auto;contain-intrinsic-size:auto 160px}
 .pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:18px;font-size:10px;font-weight:700;border:1px solid}
 .pv{background:#f0fdf4;border-color:#bbf7d0;color:#166634}
 .pp{background:#f5f3ff;border-color:#ddd6fe;color:#5b21b6}
 .pr{background:#fef2f2;border-color:#fecaca;color:#991b1b}
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
+/* ลด animation บนเครื่อง prefers-reduced-motion + Android เก่า */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
 @media print{
   @page{size:A4 portrait;margin:12mm}
   body>*:not(#receiptModal){display:none!important}
@@ -620,7 +623,7 @@ function renderBill(b, pays) {
             <div id="uploadPlaceholder"><div style="font-size:28px;margin-bottom:6px">📎</div><div style="font-size:13px;color:var(--muted)">คลิกเพื่อเลือกรูปสลิป</div><div style="font-size:11px;color:var(--muted);margin-top:3px">PNG, JPG ไม่เกิน 5MB</div></div>
             <img id="slipPreview" style="display:none" class="upload-preview" alt="สลิป">
           </div>
-          <input type="file" id="slipInput" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none" onchange="handleSlip(event)">
+          <input type="file" id="slipInput" accept="image/*" style="display:none" onchange="handleSlip(event)">
         </div>
         <button class="btn btn-success btn-full" id="submitPayBtn" onclick="submitPayment('${esc(b.id)}', ${remaining})">📤 ส่งหลักฐานการชำระ</button>
       </div></div>`);
@@ -671,27 +674,93 @@ function renderBill(b, pays) {
 // ============================================================
 function handleSlip(e) {
   const f = e.target.files[0]; if (!f) return;
-  // Validate type
-  if (!/^image\/(png|jpe?g|webp)$/i.test(f.type)) {
-    alert('รองรับเฉพาะไฟล์รูปภาพ (PNG, JPG, WEBP)');
+  // ยอมรับทุก image type (รวม HEIC จาก iPhone) — เดี๋ยวจะ compress ลงเป็น JPEG ก่อนอัพ
+  if (!f.type.startsWith('image/')) {
+    alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
     e.target.value = ''; return;
   }
-  if (f.size > 5*1024*1024) {
-    alert('รูปใหญ่เกิน 5MB'); e.target.value = ''; return;
+  // Limit 15MB ก่อน compress (compress แล้วจะเหลือ ~500KB-1MB)
+  if (f.size > 15*1024*1024) {
+    alert('รูปใหญ่เกิน 15MB กรุณาเลือกรูปที่เล็กกว่า'); e.target.value = ''; return;
   }
   slipFile = f;
+
+  // แสดง preview (HEIC แสดงไม่ได้ใน <img> แต่อัพได้ — จะ compress เป็น JPEG ก่อน)
   const r = new FileReader();
   r.onload = ev => {
     document.getElementById('uploadPlaceholder').style.display = 'none';
     const img = document.getElementById('slipPreview');
+    img.onerror = () => {
+      // HEIC หรือ format ที่ browser แสดงไม่ได้ — แสดง placeholder แทน
+      img.style.display = 'none';
+      const ph = document.getElementById('uploadPlaceholder');
+      ph.innerHTML = `<div style="font-size:28px;margin-bottom:6px">✅</div>
+        <div style="font-size:13px;color:var(--ok);font-weight:700">เลือกรูปแล้ว: ${esc(f.name)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">${(f.size/1024/1024).toFixed(2)} MB</div>`;
+      ph.style.display = 'block';
+    };
     img.src = ev.target.result; img.style.display = 'block';
     document.getElementById('uploadZone').classList.add('has');
   };
+  r.onerror = () => alert('อ่านไฟล์ไม่ได้ กรุณาลองรูปอื่น');
   r.readAsDataURL(f);
 }
 
 // ============================================================
-// SUBMIT PAYMENT — proper error handling, no orphan slips
+// ============================================================
+// IMAGE COMPRESSION — ลดขนาดสลิปก่อนอัพ
+// รูปจากกล้องมือถือมักจะ 3-8MB, resize ลงเหลือ ~500KB
+// ============================================================
+async function compressImage(file, maxDim = 1600, quality = 0.85) {
+  // ถ้าเล็กกว่า 1MB ไม่ต้อง compress (ประหยัดเวลา)
+  if (file.size < 1024 * 1024) return file;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = () => reject(new Error('อ่านไฟล์รูปไม่ได้'));
+
+    img.onload = () => {
+      try {
+        let { width, height } = img;
+        // คำนวณขนาดใหม่ ไม่เกิน maxDim ที่ด้านยาวสุด
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(blob => {
+          if (!blob) { reject(new Error('แปลงรูปไม่ได้')); return; }
+          // สร้าง File object ใหม่ (Supabase ต้องการ name + type)
+          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+          resolve(compressed);
+        }, 'image/jpeg', quality);
+      } catch (err) { reject(err); }
+    };
+    img.onerror = () => reject(new Error('โหลดรูปไม่ได้ อาจเป็นไฟล์เสีย'));
+
+    reader.readAsDataURL(file);
+  });
+}
+
+// ============================================================
+// SUBMIT PAYMENT — compress + better errors + retry-friendly
 // ============================================================
 async function submitPayment(billId, maxRemaining) {
   const amount = parseFloat(document.getElementById('pay-amount').value);
@@ -702,29 +771,78 @@ async function submitPayment(billId, maxRemaining) {
   if (!slipFile) { alert('กรุณาแนบสลิปการโอนเงิน'); return; }
 
   const btn = document.getElementById('submitPayBtn');
-  btn.disabled = true; btn.textContent = 'กำลังอัปโหลด...';
+  btn.disabled = true; btn.textContent = 'กำลังย่อรูป...';
 
   let uploadedPath = null;
   try {
-    // 1. Upload slip
-    const ext  = (slipFile.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,5) || 'png';
-    const path = `slips/${billId}_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-    const { error: upErr } = await sb.storage.from('slips').upload(path, slipFile, {
+    // 1. Compress image (รูปจากมือถือมักจะใหญ่)
+    let fileToUpload;
+    try {
+      fileToUpload = await compressImage(slipFile, 1600, 0.85);
+    } catch (compressErr) {
+      console.warn('Compress failed, using original:', compressErr);
+      fileToUpload = slipFile; // fallback ถ้า compress พัง
+    }
+
+    // 2. ถ้ายังใหญ่เกิน 5MB ลอง compress อีกรอบด้วย quality ต่ำกว่า
+    if (fileToUpload.size > 5 * 1024 * 1024) {
+      try {
+        fileToUpload = await compressImage(slipFile, 1200, 0.7);
+      } catch(e) {}
+    }
+    if (fileToUpload.size > 5 * 1024 * 1024) {
+      throw new Error('รูปใหญ่เกินไปแม้หลังย่อแล้ว กรุณาเลือกรูปอื่น');
+    }
+
+    // 3. Upload (ใช้ชื่อไฟล์ที่ปลอดภัย ไม่มีภาษาไทย/อักขระพิเศษ)
+    btn.textContent = 'กำลังอัปโหลด...';
+    const ext = 'jpg'; // หลัง compress = jpg เสมอ (ถ้าไม่ compress ใช้ jpg ได้เพราะ Supabase ไม่ตรวจ)
+    const safeBillId = String(billId).replace(/[^a-zA-Z0-9-]/g, '');
+    const path = `slips/${safeBillId}_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+
+    const { error: upErr } = await sb.storage.from('slips').upload(path, fileToUpload, {
       cacheControl: '3600',
-      upsert: false
+      upsert: false,
+      contentType: fileToUpload.type || 'image/jpeg' // ระบุชัดเจน
     });
-    if (upErr) throw new Error('อัปโหลดสลิปไม่สำเร็จ: ' + upErr.message);
+
+    if (upErr) {
+      // แปล error เป็นภาษาไทยที่เข้าใจ
+      const msg = (upErr.message || '').toLowerCase();
+      if (msg.includes('bucket') && msg.includes('not found')) {
+        throw new Error('ระบบยังไม่ได้สร้าง storage bucket "slips" กรุณาแจ้งเจ้าของหอ');
+      }
+      if (msg.includes('row-level security') || msg.includes('policy')) {
+        throw new Error('ไม่มีสิทธิ์อัพโหลด กรุณาแจ้งเจ้าของหอตั้งค่า storage policy');
+      }
+      if (msg.includes('payload too large') || msg.includes('size')) {
+        throw new Error('ไฟล์ใหญ่เกินขีดจำกัด กรุณาเลือกรูปที่เล็กกว่า');
+      }
+      if (msg.includes('mime') || msg.includes('type')) {
+        throw new Error('ประเภทไฟล์ไม่รองรับ กรุณาเลือก JPG หรือ PNG');
+      }
+      if (msg.includes('network') || msg.includes('failed to fetch')) {
+        throw new Error('การเชื่อมต่อขาด กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+      }
+      throw new Error('อัพโหลดสลิปไม่สำเร็จ: ' + upErr.message);
+    }
     uploadedPath = path;
     const slipUrl = sb.storage.from('slips').getPublicUrl(path).data.publicUrl;
 
-    // 2. Insert payment
+    // 4. Insert payment
     btn.textContent = 'กำลังบันทึก...';
     const { error: payErr } = await sb.from('payments').insert({
       bill_id: billId, amount, slip_url: slipUrl, note, status: 'pending_verify'
     });
-    if (payErr) throw new Error('บันทึกการชำระไม่สำเร็จ: ' + payErr.message);
+    if (payErr) {
+      const msg = (payErr.message || '').toLowerCase();
+      if (msg.includes('row-level security') || msg.includes('policy')) {
+        throw new Error('บันทึกไม่ได้ — RLS policy ไม่อนุญาต กรุณาแจ้งเจ้าของหอ');
+      }
+      throw new Error('บันทึกการชำระไม่สำเร็จ: ' + payErr.message);
+    }
 
-    // 3. Notification + bill status (parallel, non-blocking failures)
+    // 5. Notification + bill status (parallel, non-blocking)
     await Promise.allSettled([
       sb.from('notifications').insert({
         type: 'payment_submitted', bill_id: billId,
@@ -733,7 +851,7 @@ async function submitPayment(billId, maxRemaining) {
       sb.from('bills').update({ status: 'paid' }).eq('id', billId)
     ]);
 
-    // Success — invalidate cache, refresh
+    // Success
     slipFile = null;
     invalidateBill(billId);
     const idx = allBills.findIndex(b => b.id === billId);
@@ -743,10 +861,11 @@ async function submitPayment(billId, maxRemaining) {
     showToast('✅ ส่งหลักฐานสำเร็จ! รอเจ้าของหอยืนยัน', 'ok');
 
   } catch (e) {
-    // Cleanup orphan slip if upload succeeded but insert failed
+    // Cleanup orphan slip
     if (uploadedPath) {
       sb.storage.from('slips').remove([uploadedPath]).catch(()=>{});
     }
+    console.error('Submit payment error:', e);
     alert(e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
   } finally {
     btn.disabled = false; btn.innerHTML = '📤 ส่งหลักฐานการชำระ';
@@ -1014,21 +1133,68 @@ async function downloadReceipt(ev) {
   const btn = (ev && ev.target) || document.getElementById('dlReceiptBtn');
   const originalText = btn.textContent;
   btn.textContent='กำลังโหลด...'; btn.disabled=true;
+
+  // เก็บความกว้างเดิมของ modal เพื่อคืนค่าหลังเสร็จ
+  const el = document.getElementById('receiptContent');
+  const originalWidth = el.style.width;
+  const originalMaxWidth = el.style.maxWidth;
+
   try {
     await Promise.all([
       window.html2canvas ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
       window.jspdf        ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
     ]);
-    const el = document.getElementById('receiptContent');
-    const canvas = await html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+
+    // บังคับ render ที่ความกว้าง desktop เพื่อให้ layout เป็นแบบ side-by-side
+    // ไม่งั้นบนมือถือจะได้ layout แนวตั้งสูงๆ ที่ไม่สมส่วนใน A4
+    el.style.width = '720px';
+    el.style.maxWidth = '720px';
+    // รอ reflow
+    await new Promise(r => setTimeout(r, 50));
+
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      windowWidth: 720,
+      width: 720,
+      logging: false
+    });
+
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({orientation:'landscape',unit:'mm',format:'a5'});
-    const pdfW = pdf.internal.pageSize.getWidth();
-    pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,pdfW,(canvas.height*pdfW)/canvas.width);
+    // A4 portrait (210x297mm) — เหมาะกับใบเสร็จมากกว่า
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageW = pdf.internal.pageSize.getWidth();   // 210mm
+    const pageH = pdf.internal.pageSize.getHeight();  // 297mm
+    const margin = 12; // mm
+    const usableW = pageW - margin * 2;                // 186mm
+    const usableH = pageH - margin * 2;                // 273mm
+
+    // คำนวณขนาดภาพให้ fit ภายใน usable area โดยรักษา aspect ratio
+    const imgRatio = canvas.height / canvas.width;
+    let imgW = usableW;
+    let imgH = imgW * imgRatio;
+
+    // ถ้าสูงเกินหน้า ให้ scale down ตามความสูงแทน
+    if (imgH > usableH) {
+      imgH = usableH;
+      imgW = imgH / imgRatio;
+    }
+
+    // จัดกลางหน้า
+    const offsetX = (pageW - imgW) / 2;
+    const offsetY = margin;
+
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', offsetX, offsetY, imgW, imgH);
     pdf.save(`ใบเสร็จ_RC${genReceiptNo(currentBill?.id)}_ห้อง${currentBill?.room||''}_${currentBill?.month_label||''}.pdf`);
   } catch(e) {
+    console.error('PDF error:', e);
     alert('โหลด PDF ไม่สำเร็จ กรุณาใช้ปุ่มพิมพ์แทน');
   } finally {
+    // คืนความกว้างเดิม (สำคัญ! ไม่งั้น modal จะกว้างผิด)
+    el.style.width = originalWidth;
+    el.style.maxWidth = originalMaxWidth;
     btn.textContent = originalText || '⬇️ โหลด PDF'; btn.disabled = false;
   }
 }
