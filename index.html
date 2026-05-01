@@ -575,7 +575,8 @@ function renderMonthTabs() {
     tabs.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:4px">ยังไม่มีบิล</div>';
     return;
   }
-  tabs.innerHTML = allBills.map(b => {
+  const sortedBills = [...allBills].sort((a, b) => new Date(b.issued_at) - new Date(a.issued_at));
+  tabs.innerHTML = sortedBills.map(b => {
     const isPending = b.status==='pending' || b.status==='partial';
     const isActive  = currentBill && currentBill.id === b.id;
     return `<div class="month-tab${isActive?' active':''}${isPending&&!isActive?' has-pending':''}" data-bill-id="${esc(b.id)}">${esc(b.month_label)}</div>`;
